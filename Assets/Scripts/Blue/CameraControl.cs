@@ -12,26 +12,36 @@ public class CameraControl : MonoBehaviour
     private Vector3 currentVelocity;
 
     [Header("缩放参数")]
-    // 滚轮缩放速度
-    public float zoomSpeed = 10f;
+    // 滚轮缩放速度（每次滚轮输入对应的Z变化系数）
+    public float zoomSpeed = 2f;
     // 滚轮输入缩放系数，值越小越不敏感。
-    public float scrollSensitivity = 0.20f;
-    // 相机到焦点的最近距离。
-    public float minZoomDistance = 5f;
-    // 相机到焦点的最远距离。
-    public float maxZoomDistance = 80f;
-    // 作为选点参考的地面高度
-    public float focusPlaneY = 0f;
-
-    private Camera cachedCamera;
+    public float scrollSensitivity = 0.05f;
+    // Z轴缩放下限（更远，通常是更小的负值）。
+    public float minZoomDistance = -80f;
+    // Z轴缩放上限（更近，通常接近0的负值）。
+    public float maxZoomDistance = -2f;
 
     private void Awake()
     {
-        cachedCamera = GetComponent<Camera>();
-        if (cachedCamera == null)
+        Camera cam = GetComponent<Camera>();
+        if (cam != null)
         {
-            cachedCamera = Camera.main;
+            // 方案2：通过改变Z轴实现透视缩放。
+            cam.orthographic = false;
         }
+    }
+
+    private void OnValidate()
+    {
+        if (minZoomDistance > maxZoomDistance)
+        {
+            float temp = minZoomDistance;
+            minZoomDistance = maxZoomDistance;
+            maxZoomDistance = temp;
+        }
+
+        zoomSpeed = Mathf.Max(0f, zoomSpeed);
+        scrollSensitivity = Mathf.Max(0f, scrollSensitivity);
     }
 
     private void Update()
@@ -40,21 +50,21 @@ public class CameraControl : MonoBehaviour
 
         // x
         float x = Input.GetAxisRaw("Horizontal");
-        //z
-        float z = Input.GetAxisRaw("Vertical");
+        // y
+        float y = Input.GetAxisRaw("Vertical");
 
-        // forward相机前方向
-        Vector3 forward = transform.forward;
-        forward.y = 0f;
-        forward.Normalize();
+        // up相机上方向
+        Vector3 up = transform.up;
+        up.z = 0f;
+        up.Normalize();
 
         // right相机右方向
         Vector3 right = transform.right;
-        right.y = 0f;
+        right.z = 0f;
         right.Normalize();
 
     
-        Vector3 inputDir = (right * x + forward * z).normalized;
+        Vector3 inputDir = (right * x + up * y).normalized;
         // targetVelocity：期望达到的目标速度。
         Vector3 targetVelocity = inputDir * keyboardspeed;
 
@@ -67,59 +77,21 @@ public class CameraControl : MonoBehaviour
 
     private void HandleZoomInput()
     {
-        // 直接以鼠标当前位置作为缩放焦点
-        float scroll = Input.GetAxis("Mouse ScrollWheel") * scrollSensitivity;
+        // 滚轮有输入就缩放；停止输入就立即停在当前位置。
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (Mathf.Abs(scroll) < 0.0001f)
         {
             return;
         }
 
-        if (!TryGetMouseWorldPoint(out Vector3 zoomFocusPoint))
-        {
-            return;
-        }
-
-        ZoomTowardFocus(zoomFocusPoint, scroll);
-    }
-
-    private bool TryGetMouseWorldPoint(out Vector3 worldPoint)
-    {
-        if (cachedCamera == null)
-        {
-            worldPoint = Vector3.zero;
-            return false;
-        }
-
-        Ray ray = cachedCamera.ScreenPointToRay(Input.mousePosition);
-        // 用固定高度平面承接鼠标射线，得到稳定的世界焦点。
-        Plane groundPlane = new Plane(Vector3.up, new Vector3(0f, focusPlaneY, 0f));
-        if (groundPlane.Raycast(ray, out float enter))
-        {
-            worldPoint = ray.GetPoint(enter);
-            return true;
-        }
-
-        worldPoint = Vector3.zero;
-        return false;
-    }
-
-    private void ZoomTowardFocus(Vector3 focusPoint, float scrollValue)
-    {
-        Vector3 toFocus = focusPoint - transform.position;
-        float currentDistance = toFocus.magnitude;
-        if (currentDistance < 0.0001f)
-        {
-            return;
-        }
-
-        // 通过限制焦点距离，防止穿地或拉得过远。
-        float targetDistance = Mathf.Clamp(
-            currentDistance - scrollValue * zoomSpeed,
-            minZoomDistance,
-            maxZoomDistance
+        Vector3 position = transform.position;
+        float minZ = Mathf.Min(minZoomDistance, maxZoomDistance);
+        float maxZ = Mathf.Max(minZoomDistance, maxZoomDistance);
+        float targetZ = Mathf.Clamp(
+            position.z - scroll * zoomSpeed * scrollSensitivity,
+            minZ,
+            maxZ
         );
-
-        float moveDistance = currentDistance - targetDistance;
-        transform.position += toFocus.normalized * moveDistance;
+        transform.position = new Vector3(position.x, position.y, targetZ);
     }
 }
