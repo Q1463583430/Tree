@@ -246,7 +246,7 @@ public class RoomProductionUnit : MonoBehaviour
 
         if (workforceManager == null)
         {
-            Debug.LogWarning($"{name} 员工分配失败: 未找到 WorkforceManager");
+            Debug.LogWarning($"{name} 员工分配失败 未找到 WorkforceManager");
             return false;
         }
 
