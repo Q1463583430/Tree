@@ -15,6 +15,8 @@ public enum BuildingModuleType
 public class RoomDefinition
 {
     public string roomName = "New Room";
+    [Tooltip("留空时默认使用 roomName 作为房间数据键")]
+    public string roomDataKey = string.Empty;
     [TextArea(2, 5)]
     public string description = "Room description";
     public int sizeX = 2;
@@ -26,6 +28,16 @@ public class RoomDefinition
 
     [Header("占格偏移 (相对原点)")]
     public List<Vector2Int> occupiedCells = new List<Vector2Int> { Vector2Int.zero };
+
+    public string GetRoomDataKey()
+    {
+        if (!string.IsNullOrWhiteSpace(roomDataKey))
+        {
+            return roomDataKey.Trim();
+        }
+
+        return string.IsNullOrWhiteSpace(roomName) ? string.Empty : roomName.Trim();
+    }
 }
 
 public class BuildingRoomCatalog : MonoBehaviour
@@ -88,6 +100,20 @@ public class BuildingRoomCatalog : MonoBehaviour
             {
                 rooms[i] = new RoomDefinition();
                 continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(rooms[i].roomName))
+            {
+                rooms[i].roomName = "Room " + (i + 1);
+            }
+            else
+            {
+                rooms[i].roomName = rooms[i].roomName.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(rooms[i].roomDataKey))
+            {
+                rooms[i].roomDataKey = rooms[i].roomDataKey.Trim();
             }
 
             rooms[i].sizeX = Mathf.Max(1, rooms[i].sizeX);
