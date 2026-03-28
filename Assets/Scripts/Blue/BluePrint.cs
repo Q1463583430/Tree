@@ -28,15 +28,20 @@ public class BluePrint : MonoBehaviour
     public TMP_Text roomDescriptionText;
     public BuildingRoomCatalog roomCatalog;
 
+    [Header("房间数据接入")]
+    public Roommanager roomDataManager;
+    public bool autoApplyProductionData = true;
+
     [Header("网格放置参数")]
     public GridManager gridManager;
     public Camera placementCamera;
     public bool alignRoomPrefabToFootprintCenter = true;
-    public float roomZOffset = -2f;
+    public float roomZOffset = -0.01f;
     public Color previewValidColor = new Color(0.3f, 1f, 0.4f, 0.65f);
     public Color previewInvalidColor = new Color(1f, 0.3f, 0.3f, 0.65f);
 
     private const int RoomsPerPage = 4;
+    private const float ForcedRoomZ = -0.01f;
     private readonly List<RoomButtonItem> spawnedButtons = new List<RoomButtonItem>();
     private readonly List<Renderer> previewRenderers = new List<Renderer>();
     private readonly Dictionary<PlaceableRoom, GameObject> placedRoomObjects = new Dictionary<PlaceableRoom, GameObject>();
@@ -62,6 +67,14 @@ public class BluePrint : MonoBehaviour
         {
             placementCamera = Camera.main;
         }
+
+        if (roomDataManager == null)
+        {
+            roomDataManager = FindObjectOfType<Roommanager>();
+        }
+
+        // Force all preview/placed room objects to a fixed z depth.
+        roomZOffset = ForcedRoomZ;
 
         EnsureCanvasGroupReady();
 
@@ -609,36 +622,16 @@ public class BluePrint : MonoBehaviour
             return false;
         }
 
-        GetFootprintSize(selectedRoom, out int width, out int height);
-        if (width <= 0 || height <= 0)
+        List<Vector2Int> offsets = GetOccupiedOffsets(selectedRoom);
+        if (offsets.Count == 0)
         {
             previewInvalidReason = "房间占格为空";
             return false;
         }
 
-        for (int y = 0; y < height; y++)
+        if (!CheckPlacementCells(previewOriginCell, offsets, out previewInvalidReason))
         {
-            for (int x = 0; x < width; x++)
-            {
-                Vector2Int absolute = new Vector2Int(previewOriginCell.x + x, previewOriginCell.y + y);
-                if (!gridManager.TryGetCell(absolute, out GridCell checkCell))
-                {
-                    previewInvalidReason = "禁用格子(0): " + absolute;
-                    return false;
-                }
-
-                if (!checkCell.isUnlocked)
-                {
-                    previewInvalidReason = "格子未解锁: " + absolute;
-                    return false;
-                }
-
-                if (checkCell.isOccupied)
-                {
-                    previewInvalidReason = "格子已占用: " + absolute;
-                    return false;
-                }
-            }
+            return false;
         }
 
         PlaceableRoom placedRoom = new PlaceableRoom
@@ -650,18 +643,66 @@ public class BluePrint : MonoBehaviour
             roomPrefab = selectedRoom.blockPrefab
         };
 
-        for (int y = 0; y < height; y++)
+        for (int i = 0; i < offsets.Count; i++)
         {
-            for (int x = 0; x < width; x++)
-            {
-                Vector2Int absolute = new Vector2Int(previewOriginCell.x + x, previewOriginCell.y + y);
-                placedRoom.occupiedCells.Add(absolute);
-                gridManager.SetCellOccupied(absolute, true, placedRoom);
-            }
+            Vector2Int absolute = previewOriginCell + offsets[i];
+            placedRoom.occupiedCells.Add(absolute);
+            gridManager.SetCellOccupied(absolute, true, placedRoom);
         }
 
         Vector3 placeWorldPosition = GetRoomPlacementWorldPosition(selectedRoom, previewOriginCell);
         GameObject placedObject = Instantiate(selectedRoom.blockPrefab, placeWorldPosition, Quaternion.identity);
+
+        RoomProductionUnit productionUnit = placedObject.GetComponentInChildren<RoomProductionUnit>(true);
+        bool hasInspectorPlan = HasConfiguredProductionPlan(productionUnit != null ? productionUnit.plan : null);
+        bool planBound = BindRoomDataToPlacedObject(selectedRoom, placedObject);
+
+        if (productionUnit != null)
+        {
+            if (autoApplyProductionData && !planBound && !hasInspectorPlan)
+            {
+                for (int i = 0; i < placedRoom.occupiedCells.Count; i++)
+                {
+                    gridManager.SetCellOccupied(placedRoom.occupiedCells[i], false, null);
+                }
+
+                Destroy(placedObject);
+                previewInvalidReason = "房间未配置可用生产计划(数据表与Prefab计划均缺失)";
+                return false;
+            }
+
+            if (autoApplyProductionData && !planBound && hasInspectorPlan)
+            {
+                Debug.LogWarning($"{name} 房间[{selectedRoom.roomName}]未命中 Roommanager 配置，已回退使用 Prefab Inspector 中的生产计划。", this);
+            }
+
+            bool started = productionUnit.TryCompleteConstructionAndStart();
+            if (!started)
+            {
+                for (int i = 0; i < placedRoom.occupiedCells.Count; i++)
+                {
+                    gridManager.SetCellOccupied(placedRoom.occupiedCells[i], false, null);
+                }
+
+                Destroy(placedObject);
+                previewInvalidReason = "资源不足，无法完成初始建设";
+                return false;
+            }
+        }
+        else
+        {
+            if (!TrySpendConstructionCostWithoutProductionUnit(selectedRoom, out previewInvalidReason))
+            {
+                for (int i = 0; i < placedRoom.occupiedCells.Count; i++)
+                {
+                    gridManager.SetCellOccupied(placedRoom.occupiedCells[i], false, null);
+                }
+
+                Destroy(placedObject);
+                return false;
+            }
+        }
+
         placedRoomObjects[placedRoom] = placedObject;
         return true;
     }
@@ -671,22 +712,42 @@ public class BluePrint : MonoBehaviour
         Vector3 originWorld = gridManager.GridToWorldPosition(originCell);
         if (!alignRoomPrefabToFootprintCenter || room == null || gridManager == null)
         {
-            return originWorld + new Vector3(0f, 0f, roomZOffset);
+            return WithForcedRoomZ(originWorld + new Vector3(0f, 0f, roomZOffset));
         }
 
-        GetFootprintSize(room, out int width, out int height);
-        if (width <= 0 || height <= 0)
+        List<Vector2Int> offsets = GetOccupiedOffsets(room);
+        if (offsets.Count <= 0)
         {
-            return originWorld + new Vector3(0f, 0f, roomZOffset);
+            return WithForcedRoomZ(originWorld + new Vector3(0f, 0f, roomZOffset));
         }
 
-        float centerOffsetX = (width - 1) * 0.5f;
-        float centerOffsetY = (height - 1) * 0.5f;
+        int minX = offsets[0].x;
+        int maxX = offsets[0].x;
+        int minY = offsets[0].y;
+        int maxY = offsets[0].y;
+
+        for (int i = 1; i < offsets.Count; i++)
+        {
+            Vector2Int offset = offsets[i];
+            minX = Mathf.Min(minX, offset.x);
+            maxX = Mathf.Max(maxX, offset.x);
+            minY = Mathf.Min(minY, offset.y);
+            maxY = Mathf.Max(maxY, offset.y);
+        }
+
+        float centerOffsetX = (minX + maxX) * 0.5f;
+        float centerOffsetY = (minY + maxY) * 0.5f;
 
         Vector3 stepX = GetGridAxisStepWorld(originCell, Vector2Int.right, new Vector3(gridManager.gridSize, 0f, 0f));
         Vector3 stepY = GetGridAxisStepWorld(originCell, Vector2Int.up, new Vector3(0f, gridManager.gridSize, 0f));
 
-        return originWorld + stepX * centerOffsetX + stepY * centerOffsetY + new Vector3(0f, 0f, roomZOffset);
+        return WithForcedRoomZ(originWorld + stepX * centerOffsetX + stepY * centerOffsetY + new Vector3(0f, 0f, roomZOffset));
+    }
+
+    private static Vector3 WithForcedRoomZ(Vector3 position)
+    {
+        position.z = ForcedRoomZ;
+        return position;
     }
 
     private Vector3 GetGridAxisStepWorld(Vector2Int originCell, Vector2Int axis, Vector3 fallbackStep)
@@ -714,17 +775,43 @@ public class BluePrint : MonoBehaviour
             return false;
         }
 
-        GetFootprintSize(room, out int width, out int height);
-        if (width <= 0 || height <= 0)
+        List<Vector2Int> offsets = GetOccupiedOffsets(room);
+        if (offsets.Count == 0)
         {
             reason = "房间占格为空";
             return false;
         }
 
-        int roomMinX = originCell.x;
-        int roomMinY = originCell.y;
-        int roomMaxX = originCell.x + width - 1;
-        int roomMaxY = originCell.y + height - 1;
+        return CheckPlacementCells(originCell, offsets, out reason);
+    }
+
+    private bool CheckPlacementCells(Vector2Int originCell, List<Vector2Int> offsets, out string reason)
+    {
+        if (gridManager == null)
+        {
+            reason = "网格管理器为空";
+            return false;
+        }
+
+        if (offsets == null || offsets.Count == 0)
+        {
+            reason = "房间占格为空";
+            return false;
+        }
+
+        int roomMinX = int.MaxValue;
+        int roomMinY = int.MaxValue;
+        int roomMaxX = int.MinValue;
+        int roomMaxY = int.MinValue;
+
+        for (int i = 0; i < offsets.Count; i++)
+        {
+            Vector2Int p = originCell + offsets[i];
+            if (p.x < roomMinX) roomMinX = p.x;
+            if (p.x > roomMaxX) roomMaxX = p.x;
+            if (p.y < roomMinY) roomMinY = p.y;
+            if (p.y > roomMaxY) roomMaxY = p.y;
+        }
 
         if (!gridManager.TryGetGridBounds(out Vector2Int boundsMin, out Vector2Int boundsMax))
         {
@@ -738,36 +825,33 @@ public class BluePrint : MonoBehaviour
             return false;
         }
 
-        for (int y = 0; y < height; y++)
+        for (int i = 0; i < offsets.Count; i++)
         {
-            for (int x = 0; x < width; x++)
+            Vector2Int pos = originCell + offsets[i];
+
+            if (!gridManager.TryGetCell(pos, out GridCell cell))
             {
-                Vector2Int pos = new Vector2Int(originCell.x + x, originCell.y + y);
-
-                if (!gridManager.TryGetCell(pos, out GridCell cell))
+                if (!gridManager.HasAnyRegisteredCells())
                 {
-                    if (!gridManager.HasAnyRegisteredCells())
-                    {
-                        reason = "网格未初始化(请先生成并注册格子): " + pos;
-                    }
-                    else
-                    {
-                        reason = "禁用格子(0): " + pos;
-                    }
-                    return false;
+                    reason = "网格未初始化(请先生成并注册格子): " + pos;
                 }
-
-                if (!cell.isUnlocked)
+                else
                 {
-                    reason = "格子未解锁: " + pos;
-                    return false;
+                    reason = "禁用格子(0): " + pos;
                 }
+                return false;
+            }
 
-                if (cell.isOccupied)
-                {
-                    reason = "格子已占用: " + pos;
-                    return false;
-                }
+            if (!cell.isUnlocked)
+            {
+                reason = "格子未解锁: " + pos;
+                return false;
+            }
+
+            if (cell.isOccupied)
+            {
+                reason = "格子已占用: " + pos;
+                return false;
             }
         }
 
@@ -775,18 +859,25 @@ public class BluePrint : MonoBehaviour
         return true;
     }
 
-    private static void GetFootprintSize(RoomDefinition room, out int width, out int height)
+    private static List<Vector2Int> GetOccupiedOffsets(RoomDefinition room)
     {
         if (room == null)
         {
-            width = 0;
-            height = 0;
-            return;
+            return new List<Vector2Int>();
         }
 
-        // 明确使用 sizeX * sizeY 作为 XY 平面的占格范围。
-        width = Mathf.Max(1, room.sizeX);
-        height = Mathf.Max(1, room.sizeY);
+        int width = Mathf.Max(1, room.sizeX);
+        int height = Mathf.Max(1, room.sizeY);
+        List<Vector2Int> offsets = new List<Vector2Int>(width * height);
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                offsets.Add(new Vector2Int(x, y));
+            }
+        }
+
+        return offsets;
     }
 
     private bool TryGetGridFromMouse(out Vector2Int gridPos)
@@ -851,6 +942,138 @@ public class BluePrint : MonoBehaviour
             default:
                 return RoomCategory.Other;
         }
+    }
+
+    private bool BindRoomDataToPlacedObject(RoomDefinition room, GameObject placedObject)
+    {
+        if (!autoApplyProductionData || room == null || placedObject == null)
+        {
+            return true;
+        }
+
+        if (roomDataManager == null)
+        {
+            roomDataManager = FindObjectOfType<Roommanager>();
+            if (roomDataManager == null)
+            {
+                return false;
+            }
+        }
+
+        RoomProductionUnit productionUnit = placedObject.GetComponentInChildren<RoomProductionUnit>(true);
+        if (productionUnit == null)
+        {
+            return true;
+        }
+
+        string dataKey = room.GetRoomDataKey();
+        if (string.IsNullOrWhiteSpace(dataKey))
+        {
+            Debug.LogWarning($"{name} 房间[{room.roomName}]未配置数据键，无法注入生产数据。", this);
+            return false;
+        }
+
+        if (!roomDataManager.TryApplyProductionPlan(dataKey, productionUnit))
+        {
+            Debug.LogWarning($"{name} 找不到房间数据[{dataKey}]，请检查 Roommanager.roomProfiles。", this);
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TrySpendConstructionCostWithoutProductionUnit(RoomDefinition room, out string reason)
+    {
+        reason = string.Empty;
+
+        if (room == null)
+        {
+            reason = "房间数据为空";
+            return false;
+        }
+
+        if (roomDataManager == null)
+        {
+            roomDataManager = FindObjectOfType<Roommanager>();
+        }
+
+        if (roomDataManager == null)
+        {
+            // 没有生产单元且没有数据表时，允许仅放置，不做资源变动。
+            return true;
+        }
+
+        string dataKey = room.GetRoomDataKey();
+        if (string.IsNullOrWhiteSpace(dataKey))
+        {
+            return true;
+        }
+
+        if (!roomDataManager.TryGetProfile(dataKey, out RoomDataProfile profile) || profile == null)
+        {
+            return true;
+        }
+
+        ResourceManager resourceManager = ResourceManager.Instance;
+        if (resourceManager == null)
+        {
+            resourceManager = FindObjectOfType<ResourceManager>();
+        }
+
+        if (resourceManager == null)
+        {
+            reason = "未找到资源管理器";
+            return false;
+        }
+
+        if (profile.constructionCosts == null || profile.constructionCosts.Count == 0)
+        {
+            return true;
+        }
+
+        if (!resourceManager.CanAfford(profile.constructionCosts))
+        {
+            reason = "资源不足，无法完成初始建设";
+            return false;
+        }
+
+        if (!resourceManager.TrySpend(profile.constructionCosts))
+        {
+            reason = "扣除建造资源失败";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool HasConfiguredProductionPlan(RoomProductionPlan plan)
+    {
+        if (plan == null)
+        {
+            return false;
+        }
+
+        if (plan.requiredSquirrels > 0)
+        {
+            return true;
+        }
+
+        if (plan.constructionCosts != null && plan.constructionCosts.Count > 0)
+        {
+            return true;
+        }
+
+        if (plan.cycleCosts != null && plan.cycleCosts.Count > 0)
+        {
+            return true;
+        }
+
+        if (plan.cycleOutputs != null && plan.cycleOutputs.Count > 0)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private void RemovePlacedRoom(PlaceableRoom room)

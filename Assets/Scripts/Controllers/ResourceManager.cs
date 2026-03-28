@@ -46,16 +46,21 @@ public class ResourceState
 
 public class ResourceManager : MonoBehaviour
 {
+    private const int InitialEnergyValue = 100;
+
     //使用实例同一管理资源，仅可私有设置，可读
     public static ResourceManager Instance { get; private set; }
 
     [Header("启动时是否跨场景保留")]
     public bool dontDestroyOnLoad = true;
 
+    [Header("启动修正")]
+    public bool enforceEnergyAtStartIfZero = true;
+
     [Header("初始资源配置")]
     public List<ResourceState> initialStates = new List<ResourceState>
     {
-        new ResourceState { type = ResourceType.Energy, current = 0, min = 0, max = 2000},
+        new ResourceState { type = ResourceType.Energy, current = 100, min = 100, max = 2000},
         new ResourceState { type = ResourceType.Root, current = 0, min = 0, max = 2000 },
         new ResourceState { type = ResourceType.Fruit, current = 0, min = 0, max = 2000 },
         new ResourceState { type = ResourceType.Squirrel, current = 0, min = 0, max = 2000 },
@@ -82,6 +87,16 @@ public class ResourceManager : MonoBehaviour
         }
 
         InitializeStates();
+    }
+
+    void Start()
+    {
+        if (!enforceEnergyAtStartIfZero)
+        {
+            return;
+        }
+
+        EnsureEnergyInitializedAtStart();
     }
 
     public int Get(ResourceType type)
@@ -212,6 +227,11 @@ public class ResourceManager : MonoBehaviour
     {
         _states.Clear();
 
+        if (initialStates == null)
+        {
+            initialStates = new List<ResourceState>();
+        }
+
         for (int i = 0; i < initialStates.Count; i++)
         {
             ResourceState src = initialStates[i];
@@ -223,16 +243,41 @@ public class ResourceManager : MonoBehaviour
                 continue;
             }
 
-            //将所有数值赋值给运行中的states
-            ResourceState runtime = new ResourceState
+            ResourceState runtime;
+            if (src.type == ResourceType.Energy)
             {
-                type = src.type,
-                min = src.min,
-                max = Mathf.Max(src.max, src.min),
-                current = Mathf.Clamp(src.current, src.min, Mathf.Max(src.max, src.min)),
-            };
+                // Energy starts at a fixed value and should not be clamped to 0 by serialized inspector ranges.
+                runtime = new ResourceState
+                {
+                    type = ResourceType.Energy,
+                    min = 0,
+                    max = Mathf.Max(InitialEnergyValue, src.max),
+                    current = InitialEnergyValue,
+                };
+            }
+            else
+            {
+                runtime = new ResourceState
+                {
+                    type = src.type,
+                    min = src.min,
+                    max = Mathf.Max(src.max, src.min),
+                    current = Mathf.Clamp(src.current, src.min, Mathf.Max(src.max, src.min)),
+                };
+            }
 
             _states.Add(runtime.type, runtime);
+        }
+
+        if (!_states.ContainsKey(ResourceType.Energy))
+        {
+            _states.Add(ResourceType.Energy, new ResourceState
+            {
+                type = ResourceType.Energy,
+                min = 0,
+                max = 2000,
+                current = InitialEnergyValue,
+            });
         }
 
         OnResourcesInitialized?.Invoke();
@@ -241,5 +286,34 @@ public class ResourceManager : MonoBehaviour
         {
             OnResourceChanged?.Invoke(kv.Key, kv.Value.current, kv.Value.current);
         }
+    }
+
+    private void EnsureEnergyInitializedAtStart()
+    {
+        if (!_states.TryGetValue(ResourceType.Energy, out ResourceState energyState) || energyState == null)
+        {
+            ResourceState runtime = new ResourceState
+            {
+                type = ResourceType.Energy,
+                min = 0,
+                max = 2000,
+                current = InitialEnergyValue,
+            };
+
+            _states[ResourceType.Energy] = runtime;
+            OnResourceChanged?.Invoke(ResourceType.Energy, 0, runtime.current);
+            return;
+        }
+
+        if (energyState.current > 0)
+        {
+            return;
+        }
+
+        int before = energyState.current;
+        energyState.min = Mathf.Min(energyState.min, 0);
+        energyState.max = Mathf.Max(energyState.max, InitialEnergyValue);
+        energyState.current = InitialEnergyValue;
+        OnResourceChanged?.Invoke(ResourceType.Energy, before, energyState.current);
     }
 }

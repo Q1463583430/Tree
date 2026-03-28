@@ -44,8 +44,8 @@ public class GridManager : MonoBehaviour
     public float gridSize = 1f;
     public float placementZ = 0f;
     [Header("网格世界偏移(按格子单位)")]
-    public float worldXOffsetInCells = 0.5f;
-    public float worldYOffsetInCells = 0.5f;
+    public float worldXOffsetInCells = 0f;
+    public float worldYOffsetInCells = 0f;
 
     [Header("按照解锁顺序配置各个阶段的格子集合")]
     public List<GridStage> stages = new List<GridStage>();
