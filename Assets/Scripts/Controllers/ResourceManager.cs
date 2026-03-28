@@ -31,6 +31,7 @@ public enum ResourceType
     Energy = 0,
     Fruit = 1,
     Root = 2,
+    Squirrel = 3,
 }
 
 //数据当前的状态
@@ -57,6 +58,7 @@ public class ResourceManager : MonoBehaviour
         new ResourceState { type = ResourceType.Energy, current = 0, min = 0, max = 2000},
         new ResourceState { type = ResourceType.Root, current = 0, min = 0, max = 2000 },
         new ResourceState { type = ResourceType.Fruit, current = 0, min = 0, max = 2000 },
+        new ResourceState { type = ResourceType.Squirrel, current = 0, min = 0, max = 2000 },
     };
 
     //使用事件来管理资源变化，通过订阅来改变数值

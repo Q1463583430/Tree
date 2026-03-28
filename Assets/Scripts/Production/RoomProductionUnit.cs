@@ -16,6 +16,7 @@ public class RoomProductionPlan
 {
     public string roomId;
     public List<ResourceAmount> constructionCosts = new List<ResourceAmount>();
+    public int requiredSquirrels = 0;
     public float cycleSeconds = 30f;
     public List<ResourceAmount> cycleCosts = new List<ResourceAmount>();
     public List<ResourceAmount> cycleOutputs = new List<ResourceAmount>();
@@ -27,6 +28,7 @@ public class RoomProductionUnit : MonoBehaviour
 {
     [Header("依赖")]
     public ResourceManager resourceManager;
+    public WorkforceManager workforceManager;
 
     [Header("生产配置")]
     public RoomProductionPlan plan = new RoomProductionPlan();
@@ -41,6 +43,7 @@ public class RoomProductionUnit : MonoBehaviour
     public event Action<RoomProductionUnit, RoomProductionState> OnStateChanged;
     public event Action<RoomProductionUnit> OnConstructionCompleted;
     public event Action<RoomProductionUnit> OnConstructionFailedByResource;
+    public event Action<RoomProductionUnit> OnWorkerAllocationFailed;
     public event Action<RoomProductionUnit> OnSettled;
     public event Action<RoomProductionUnit> OnSettleFailedByResource; //因资源不够而停摆
 
@@ -52,6 +55,15 @@ public class RoomProductionUnit : MonoBehaviour
             if (resourceManager == null)
             {
                 resourceManager = FindObjectOfType<ResourceManager>();
+            }
+        }
+
+        if (workforceManager == null)
+        {
+            workforceManager = WorkforceManager.Instance;
+            if (workforceManager == null)
+            {
+                workforceManager = FindObjectOfType<WorkforceManager>();
             }
         }
     }
@@ -81,6 +93,8 @@ public class RoomProductionUnit : MonoBehaviour
         {
             scheduler.Unregister(this);
         }
+
+        ReleaseWorkers();
     }
 
     // 建造完成后调用：兼容旧接口，内部走可失败建造逻辑。
@@ -156,11 +170,28 @@ public class RoomProductionUnit : MonoBehaviour
         return Mathf.Max(0f, (float)(NextSettleTime - now));
     }
 
+    // 每天结束时调用：清空“正在进行中”的周期进度并从整周期重新计时。
+    public void ResetProgressForNewDay(double now)
+    {
+        if (!IsBuilt) return;
+        if (State != RoomProductionState.Running) return;
+
+        float cycle = Mathf.Max(0.1f, plan.cycleSeconds);
+        NextSettleTime = now + cycle;
+    }
+
     private void StartRunning()
     {
         if (resourceManager == null)
         {
             Debug.LogWarning($"{name} 启动失败: 未找到 ResourceManager");
+            return;
+        }
+
+        if (!TryAcquireWorkers())
+        {
+            ChangeState(RoomProductionState.PausedNoResource);
+            OnWorkerAllocationFailed?.Invoke(this);
             return;
         }
 
@@ -181,6 +212,7 @@ public class RoomProductionUnit : MonoBehaviour
         if (!resourceManager.CanAfford(plan.cycleCosts))
         {
             ChangeState(RoomProductionState.PausedNoResource);
+            ReleaseWorkers();
             OnSettleFailedByResource?.Invoke(this);
             return;
         }
@@ -197,7 +229,33 @@ public class RoomProductionUnit : MonoBehaviour
     private void ChangeState(RoomProductionState next)
     {
         if (State == next) return;
+
+        if (next != RoomProductionState.Running)
+        {
+            ReleaseWorkers();
+        }
+
         State = next;
         OnStateChanged?.Invoke(this, State);
+    }
+
+    private bool TryAcquireWorkers()
+    {
+        int required = Mathf.Max(0, plan.requiredSquirrels);
+        if (required == 0) return true;
+
+        if (workforceManager == null)
+        {
+            Debug.LogWarning($"{name} 员工分配失败: 未找到 WorkforceManager");
+            return false;
+        }
+
+        return workforceManager.TryAllocate(this, required);
+    }
+
+    private void ReleaseWorkers()
+    {
+        if (workforceManager == null) return;
+        workforceManager.Release(this);
     }
 }
