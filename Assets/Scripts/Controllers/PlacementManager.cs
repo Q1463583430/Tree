@@ -111,7 +111,7 @@ public class PlacementManager : MonoBehaviour
         if (obj.roomPrefab != null)
         {
             Vector3 spawnPosition = gridManager.GridToWorldPosition(origin);
-            spawnPosition.y = gridManager.placementY;
+            spawnPosition.z = gridManager.placementZ;
             data.instance = Instantiate(obj.roomPrefab, spawnPosition, Quaternion.identity, transform);
             data.instance.name = string.IsNullOrEmpty(obj.roomName) ? obj.roomPrefab.name : obj.roomName;
         }
