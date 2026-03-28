@@ -9,6 +9,12 @@ public class PlacementManager : MonoBehaviour
     [Header("可放置房间定义")]
     public List<PlaceableRoom> availableRooms = new List<PlaceableRoom>();
 
+    [Header("可选: 从Grid阶段自动构建可放置对象")]
+    public bool autoBuildRoomsFromStageOnAwake = false;
+    public int sourceStageIndex = 0;
+    public bool clearRoomsBeforeBuild = true;
+    public bool disableSourceStageObjects = true;
+
     [Header("调试交互")]
     public bool enableDebugInput = false;
     public Camera mainCamera;
@@ -35,6 +41,11 @@ public class PlacementManager : MonoBehaviour
         if (mainCamera == null)
         {
             mainCamera = Camera.main;
+        }
+
+        if (autoBuildRoomsFromStageOnAwake)
+        {
+            BuildRoomsFromStage(sourceStageIndex);
         }
     }
 
@@ -141,6 +152,65 @@ public class PlacementManager : MonoBehaviour
         if (availableRooms == null || availableRooms.Count == 0) return;
         if (index < 0 || index >= availableRooms.Count) return;
         selectedRoomIndex = index;
+    }
+
+    [ContextMenu("Build Rooms From Source Stage")]
+    public void BuildRoomsFromSourceStage()
+    {
+        BuildRoomsFromStage(sourceStageIndex);
+    }
+
+    public void BuildRoomsFromStage(int stageIndex)
+    {
+        if (gridManager == null)
+        {
+            Debug.LogWarning("BuildRoomsFromStage 失败: gridManager 为空");
+            return;
+        }
+
+        if (gridManager.stages == null || gridManager.stages.Count == 0)
+        {
+            Debug.LogWarning("BuildRoomsFromStage 失败: gridManager.stages 为空");
+            return;
+        }
+
+        if (stageIndex < 0 || stageIndex >= gridManager.stages.Count)
+        {
+            Debug.LogWarning($"BuildRoomsFromStage 失败: stageIndex 越界({stageIndex})");
+            return;
+        }
+
+        if (clearRoomsBeforeBuild)
+        {
+            availableRooms.Clear();
+            selectedRoomIndex = 0;
+        }
+
+        GridStage stage = gridManager.stages[stageIndex];
+        int created = 0;
+
+        for (int i = 0; i < stage.cellObjects.Count; i++)
+        {
+            GameObject source = stage.cellObjects[i];
+            if (source == null) continue;
+
+            PlaceableRoom room = new PlaceableRoom
+            {
+                roomName = $"Stage{stageIndex}_{source.name}_{i}",
+                roomPrefab = source,
+                occupiedCells = new List<Vector2Int> { Vector2Int.zero }
+            };
+
+            availableRooms.Add(room);
+            created++;
+
+            if (disableSourceStageObjects)
+            {
+                source.SetActive(false);
+            }
+        }
+
+        Debug.Log($"已从 Stage {stageIndex} 构建可放置对象: {created} 个");
     }
 
     private void HandleDebugInput()
