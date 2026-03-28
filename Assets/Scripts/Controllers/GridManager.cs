@@ -31,7 +31,7 @@ public class GridStage
 public class GridManager : MonoBehaviour
 {
     public float gridSize = 1f;
-    public float placementY = 0f;
+    public float placementZ = 0f;
 
     [Header("按照解锁顺序配置各个阶段的格子集合")]
     public List<GridStage> stages = new List<GridStage>();
@@ -128,18 +128,18 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    // 将世界坐标转换为网格坐标 (如果做3D场景，高度是Y，平面是XZ，所以用 z 除以 gridSize)
+    // 将世界坐标转换为网格坐标（XY平面）。
     public Vector2Int WorldToGridPosition(Vector3 worldPosition)
     {
         int x = Mathf.RoundToInt(worldPosition.x / gridSize);
-        int z = Mathf.RoundToInt(worldPosition.z / gridSize);
-        return new Vector2Int(x, z);
+        int y = Mathf.RoundToInt(worldPosition.y / gridSize);
+        return new Vector2Int(x, y);
     }
 
-    // 将网格坐标转换为世界坐标
+    // 将网格坐标转换为世界坐标（XY平面，Z为固定深度 placementZ）。
     public Vector3 GridToWorldPosition(Vector2Int gridPosition)
     {
-        return new Vector3(gridPosition.x * gridSize, 0f, gridPosition.y * gridSize);
+        return new Vector3(gridPosition.x * gridSize, gridPosition.y * gridSize, placementZ);
     }
 
     //判断grid的这个位置是否有格子
@@ -178,7 +178,7 @@ public class GridManager : MonoBehaviour
         {
             GridCell cell = kv.Value;
             Vector3 center = GridToWorldPosition(cell.position);
-            center.y = placementY;
+            center.z = placementZ;
 
             if (!cell.isUnlocked)
             {
@@ -193,7 +193,7 @@ public class GridManager : MonoBehaviour
                 Gizmos.color = new Color(0.2f, 1f, 0.3f, 0.9f);
             }
 
-            Gizmos.DrawWireCube(center, new Vector3(gridSize * 0.9f, 0.05f, gridSize * 0.9f));
+            Gizmos.DrawWireCube(center, new Vector3(gridSize * 0.9f, gridSize * 0.9f, 0.05f));
         }
     }
 
