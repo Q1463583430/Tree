@@ -94,6 +94,50 @@ public class EmployeeRepository : MonoBehaviour
         return true;
     }
 
+    public bool TryGetById(string id, out HREmployeeData employee)
+    {
+        employee = null;
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return false;
+        }
+
+        string target = id.Trim();
+        for (int i = 0; i < employees.Count; i++)
+        {
+            HREmployeeData item = employees[i];
+            if (item == null || string.IsNullOrWhiteSpace(item.id))
+            {
+                continue;
+            }
+
+            if (string.Equals(item.id, target, StringComparison.Ordinal))
+            {
+                employee = item;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool RemoveById(string id, out HREmployeeData removed)
+    {
+        removed = null;
+        if (!TryGetById(id, out HREmployeeData found) || found == null)
+        {
+            return false;
+        }
+
+        if (!Remove(found))
+        {
+            return false;
+        }
+
+        removed = found;
+        return true;
+    }
+
     public void RegisterCapacityBonus(UnityEngine.Object source, int bonus)
     {
         if (source == null) return;

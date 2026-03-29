@@ -575,13 +575,13 @@ public class RoomProductionUnit : MonoBehaviour
         {
             case RoomEmployeeWorkType.Farm:
             case RoomEmployeeWorkType.Gym:
-                return employee.stamina;
+                return Mathf.RoundToInt(employee.stamina);
             case RoomEmployeeWorkType.Cook:
             case RoomEmployeeWorkType.Library:
             case RoomEmployeeWorkType.HR:
-                return employee.intelligence;
+                return Mathf.RoundToInt(employee.intelligence);
             case RoomEmployeeWorkType.MagicRoom:
-                return employee.magic;
+                return Mathf.RoundToInt(employee.magic);
             case RoomEmployeeWorkType.PineconePlant:
                 return Mathf.RoundToInt((employee.stamina + employee.intelligence) * 0.5f);
             default:

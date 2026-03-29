@@ -133,6 +133,11 @@ public class RoomEmployeeWarehouseUI : MonoBehaviour
     {
         GUILayout.Label("仓库列表（点击房间后可在此界面配置）");
         IReadOnlyList<HREmployeeData> all = assignmentManager.GetAllEmployees();
+        EmployeeRepository repository = assignmentManager == null ? null : assignmentManager.employeeRepository;
+        int capacity = repository == null ? 0 : repository.Capacity;
+        int remaining = Mathf.Max(0, capacity - all.Count);
+        GUILayout.Label("仓库容量: " + all.Count + "/" + capacity + " | 剩余: " + remaining);
+
         if (all.Count == 0)
         {
             GUILayout.Label("仓库暂无鼠鼠。请先打开 HR 房间进行手动招募。");
@@ -169,8 +174,13 @@ public class RoomEmployeeWarehouseUI : MonoBehaviour
         int assignedCount = assignmentManager.GetAssignedCount(_activeRoom);
         float currentMul = _activeRoom.GetActiveOutputMultiplier();
         float nextMul = _activeRoom.GetPendingOutputMultiplier();
+        IReadOnlyList<HREmployeeData> all = assignmentManager.GetAllEmployees();
+        EmployeeRepository repository = assignmentManager == null ? null : assignmentManager.employeeRepository;
+        int capacity = repository == null ? 0 : repository.Capacity;
+        int remaining = Mathf.Max(0, capacity - all.Count);
 
         GUILayout.Label("房间: " + _activeRoom.name);
+        GUILayout.Label("仓库: " + all.Count + "/" + capacity + " | 剩余: " + remaining);
         GUILayout.Label("需求: " + required + " | 已配置: " + assignedCount + " | 当前倍率: " + currentMul.ToString("0.###") + " | 下周期倍率: " + nextMul.ToString("0.###"));
 
         GUILayout.Space(6f);
@@ -217,7 +227,6 @@ public class RoomEmployeeWarehouseUI : MonoBehaviour
         GUILayout.Space(8f);
         GUILayout.Label("可配置鼠鼠");
         _poolScroll = GUILayout.BeginScrollView(_poolScroll, GUILayout.Height(220f));
-        IReadOnlyList<HREmployeeData> all = assignmentManager.GetAllEmployees();
         for (int i = 0; i < all.Count; i++)
         {
             HREmployeeData e = all[i];

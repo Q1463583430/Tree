@@ -8,10 +8,11 @@ public class RoomEmployeeAssignmentManager : MonoBehaviour
     public static RoomEmployeeAssignmentManager Instance { get; private set; }
 
     [Header("依赖")]
-    public HREmployeeRepository employeeRepository;
+    public EmployeeRepository employeeRepository;
 
     private readonly Dictionary<RoomProductionUnit, List<string>> _assignedIdsByRoom = new Dictionary<RoomProductionUnit, List<string>>();
     private readonly Dictionary<string, RoomProductionUnit> _roomByEmployeeId = new Dictionary<string, RoomProductionUnit>(StringComparer.Ordinal);
+    private bool _repositoryEventsBound;
 
     public event Action<RoomProductionUnit> OnRoomAssignmentsChanged;
 
@@ -25,6 +26,16 @@ public class RoomEmployeeAssignmentManager : MonoBehaviour
 
         Instance = this;
         EnsureRepository();
+    }
+
+    void OnDestroy()
+    {
+        UnbindRepositoryEvents();
+
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     void Update()
@@ -398,16 +409,116 @@ public class RoomEmployeeAssignmentManager : MonoBehaviour
     {
         if (employeeRepository != null)
         {
+            BindRepositoryEvents();
             return true;
         }
 
-        employeeRepository = HREmployeeRepository.Instance;
+        employeeRepository = EmployeeRepository.Instance;
         if (employeeRepository == null)
         {
-            employeeRepository = FindObjectOfType<HREmployeeRepository>();
+            employeeRepository = FindObjectOfType<EmployeeRepository>();
         }
 
+        if (employeeRepository == null)
+        {
+            employeeRepository = EmployeeRepository.GetOrCreateInstance();
+        }
+
+        BindRepositoryEvents();
         return employeeRepository != null;
+    }
+
+    private void BindRepositoryEvents()
+    {
+        if (_repositoryEventsBound || employeeRepository == null)
+        {
+            return;
+        }
+
+        employeeRepository.OnEmployeeRemoved += OnRepositoryEmployeeRemoved;
+        _repositoryEventsBound = true;
+    }
+
+    private void UnbindRepositoryEvents()
+    {
+        if (!_repositoryEventsBound || employeeRepository == null)
+        {
+            return;
+        }
+
+        employeeRepository.OnEmployeeRemoved -= OnRepositoryEmployeeRemoved;
+        _repositoryEventsBound = false;
+    }
+
+    private void OnRepositoryEmployeeRemoved(HREmployeeData employee)
+    {
+        if (employee == null || string.IsNullOrWhiteSpace(employee.id))
+        {
+            return;
+        }
+
+        string removedId = employee.id.Trim();
+        _roomByEmployeeId.Remove(removedId);
+
+        List<RoomProductionUnit> changedRooms = null;
+        List<RoomProductionUnit> emptyRooms = null;
+
+        foreach (KeyValuePair<RoomProductionUnit, List<string>> kv in _assignedIdsByRoom)
+        {
+            List<string> ids = kv.Value;
+            if (ids == null)
+            {
+                continue;
+            }
+
+            if (!ids.Remove(removedId))
+            {
+                continue;
+            }
+
+            if (changedRooms == null)
+            {
+                changedRooms = new List<RoomProductionUnit>();
+            }
+
+            changedRooms.Add(kv.Key);
+
+            if (ids.Count == 0)
+            {
+                if (emptyRooms == null)
+                {
+                    emptyRooms = new List<RoomProductionUnit>();
+                }
+
+                emptyRooms.Add(kv.Key);
+            }
+        }
+
+        if (emptyRooms != null)
+        {
+            for (int i = 0; i < emptyRooms.Count; i++)
+            {
+                _assignedIdsByRoom.Remove(emptyRooms[i]);
+            }
+        }
+
+        if (changedRooms == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < changedRooms.Count; i++)
+        {
+            RoomProductionUnit room = changedRooms[i];
+            if (room == null)
+            {
+                continue;
+            }
+
+            ApplyPendingBonus(room);
+            RefreshRoomRunState(room);
+            OnRoomAssignmentsChanged?.Invoke(room);
+        }
     }
 
     private void CleanupDestroyedRooms()

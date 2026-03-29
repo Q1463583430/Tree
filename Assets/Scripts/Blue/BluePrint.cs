@@ -6,6 +6,8 @@ using TMPro;
 
 public class BluePrint : MonoBehaviour
 {
+    public Button closeButton;
+
     [Header("主按钮与主面板")]
     public Button magicBuildingButton;
     public GameObject magicBuildingPanel;
@@ -395,6 +397,14 @@ public class BluePrint : MonoBehaviour
             else
             {
                 Debug.LogWarning("放置失败: " + previewInvalidReason);
+
+                // 若失败原因为资源不足，则直接销毁预览体并恢复 UI
+                if (!string.IsNullOrEmpty(previewInvalidReason) && previewInvalidReason.Contains("资源不足"))
+                {
+                    DestroyPreview();
+                    isHoldingPlaceButton = false;
+                    SetCanvasVisible(true);
+                }
             }
 
             return;
@@ -627,6 +637,9 @@ public class BluePrint : MonoBehaviour
 
         previewInstance = Instantiate(selectedRoom.blockPrefab);
         previewInstance.name = selectedRoom.blockPrefab.name + "_Preview";
+        previewInstance.SetActive(false);
+
+        DisableRuntimeComponentsForPreview(previewInstance);
 
         Collider[] colliders = previewInstance.GetComponentsInChildren<Collider>(true);
         for (int i = 0; i < colliders.Length; i++)
@@ -638,6 +651,24 @@ public class BluePrint : MonoBehaviour
         previewInstance.GetComponentsInChildren(true, previewRenderers);
         ApplyPreviewColor(previewInvalidColor);
         previewInstance.SetActive(false);
+    }
+
+    private static void DisableRuntimeComponentsForPreview(GameObject previewRoot)
+    {
+        if (previewRoot == null)
+        {
+            return;
+        }
+
+        MonoBehaviour[] behaviours = previewRoot.GetComponentsInChildren<MonoBehaviour>(true);
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            MonoBehaviour behaviour = behaviours[i];
+            if (behaviour != null)
+            {
+                behaviour.enabled = false;
+            }
+        }
     }
 
     private void DestroyPreview()
@@ -1286,5 +1317,20 @@ public class BluePrint : MonoBehaviour
 
             placedRoomObjects.Remove(room);
         }
+    }
+
+    public void MagicButton()
+    {
+        magicBuildingPanel.SetActive(true);
+        magicBuildingButton.gameObject.SetActive(false);
+        closeButton.gameObject.SetActive(true);
+
+    }
+
+    public void CloseButton()
+    {
+        closeButton.gameObject.SetActive(false);
+        magicBuildingButton.gameObject.SetActive(true);
+        magicBuildingPanel.SetActive(false);
     }
 }

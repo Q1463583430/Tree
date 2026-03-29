@@ -41,7 +41,7 @@ public class HR : MonoBehaviour
 
         if (employeeRepository == null)
         {
-            employeeRepository = HREmployeeRepository.EnsureInstance();
+            employeeRepository = EmployeeRepository.GetOrCreateInstance();
         }
 
         if (hasRecruitedOnce && string.IsNullOrWhiteSpace(lastRecruitedEmployeeId) && employeeRepository != null && employeeRepository.Count > 0)
@@ -177,10 +177,10 @@ public class HR : MonoBehaviour
 
         if (employeeRepository == null)
         {
-            employeeRepository = HREmployeeRepository.EnsureInstance();
+            employeeRepository = EmployeeRepository.GetOrCreateInstance();
             if (employeeRepository == null)
             {
-                failReason = "未找到 HREmployeeRepository";
+                failReason = "未找到 EmployeeRepository";
                 return false;
             }
         }
@@ -221,10 +221,10 @@ public class HR : MonoBehaviour
 
         if (employeeRepository == null)
         {
-            employeeRepository = HREmployeeRepository.EnsureInstance();
+            employeeRepository = EmployeeRepository.GetOrCreateInstance();
             if (employeeRepository == null)
             {
-                failReason = "未找到 HREmployeeRepository";
+                failReason = "未找到 EmployeeRepository";
                 return false;
             }
         }
@@ -346,7 +346,7 @@ public class HR : MonoBehaviour
 
         if (employeeRepository == null)
         {
-            employeeRepository = HREmployeeRepository.EnsureInstance();
+            employeeRepository = EmployeeRepository.GetOrCreateInstance();
         }
 
         if (employeeRepository == null)
@@ -368,7 +368,7 @@ public class HR : MonoBehaviour
         {
             resourceManager.Add(ResourceType.Fruit, recruitFruitCost);
             employee = null;
-            failReason = $"员工已满（上限 {employeeRepository.Capacity}）";
+            Debug.LogWarning($"[HR] 自动产鼠失败：员工已满（上限 {employeeRepository.Capacity}）", this);
             return false;
         }
 
