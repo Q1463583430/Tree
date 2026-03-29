@@ -21,6 +21,11 @@ public class RoomButtonItem : MonoBehaviour, IPointerEnterHandler, IPointerClick
             button = GetComponent<Button>();
         }
 
+        if (label == null)
+        {
+            label = GetComponentInChildren<TMP_Text>(true);
+        }
+
         RefreshLabel();
 
         if (button != null)
@@ -32,10 +37,39 @@ public class RoomButtonItem : MonoBehaviour, IPointerEnterHandler, IPointerClick
 
     public void RefreshLabel()
     {
-        if (label != null && roomData != null)
+        if (label == null)
         {
-            label.text = roomData.roomName;
+            label = GetComponentInChildren<TMP_Text>(true);
         }
+
+        if (label == null)
+        {
+            return;
+        }
+
+        if (roomData == null)
+        {
+            label.text = string.Empty;
+            return;
+        }
+
+        string displayName = roomData.roomName != null ? roomData.roomName.Trim() : string.Empty;
+        if (string.IsNullOrEmpty(displayName) && roomData.blockPrefab != null)
+        {
+            displayName = roomData.blockPrefab.name;
+        }
+
+        label.text = string.IsNullOrEmpty(displayName) ? "Unnamed Room" : displayName;
+    }
+
+    private void OnEnable()
+    {
+        RefreshLabel();
+    }
+
+    private void OnValidate()
+    {
+        RefreshLabel();
     }
 
     public void OnPointerEnter(PointerEventData eventData)

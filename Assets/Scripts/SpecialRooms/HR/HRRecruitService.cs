@@ -5,6 +5,9 @@ using UnityEngine;
 // HR 抽卡逻辑服务：只负责生成员工数据，不关心UI。
 public static class HRRecruitService
 {
+    private const int MinStat = 1;
+    private const int MaxStat = 10;
+
     private static readonly int[] BaseStatValues = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     private static readonly int[] BaseStatWeights = { 12, 17, 30, 17, 11, 6, 3, 2, 1, 1 };
 
@@ -49,7 +52,18 @@ public static class HRRecruitService
 
     private static int RollBaseStatByWeight()
     {
-        int r = UnityEngine.Random.Range(1, 101);
+        int totalWeight = 0;
+        for (int i = 0; i < BaseStatWeights.Length; i++)
+        {
+            totalWeight += Mathf.Max(0, BaseStatWeights[i]);
+        }
+
+        if (totalWeight <= 0)
+        {
+            return 3;
+        }
+
+        int r = UnityEngine.Random.Range(1, totalWeight + 1);
         int cumulative = 0;
 
         for (int i = 0; i < BaseStatWeights.Length; i++)
@@ -69,9 +83,10 @@ public static class HRRecruitService
     {
         float chance = Mathf.Clamp01((hrIntelligence - 3) * 0.07f);
 
-        if (UnityEngine.Random.value < chance) e.stamina += 1;
-        if (UnityEngine.Random.value < chance) e.intelligence += 1;
-        if (UnityEngine.Random.value < chance) e.magic += 1;
+        // 高数值应稀有：8以上不再通过HR加成继续抬升。
+        TryIncreaseStatWithSoftCap(ref e.stamina, chance, 7);
+        TryIncreaseStatWithSoftCap(ref e.intelligence, chance, 7);
+        TryIncreaseStatWithSoftCap(ref e.magic, chance, 7);
     }
 
     // 精英HR额外提高优秀员工概率：这里实现为随机属性 +1。
@@ -81,9 +96,22 @@ public static class HRRecruitService
         if (UnityEngine.Random.value >= chance) return;
 
         int pick = UnityEngine.Random.Range(0, 3);
-        if (pick == 0) e.stamina += 1;
-        else if (pick == 1) e.intelligence += 1;
-        else e.magic += 1;
+        if (pick == 0) TryIncreaseStatWithSoftCap(ref e.stamina, 1f, 7);
+        else if (pick == 1) TryIncreaseStatWithSoftCap(ref e.intelligence, 1f, 7);
+        else TryIncreaseStatWithSoftCap(ref e.magic, 1f, 7);
+    }
+
+    private static void TryIncreaseStatWithSoftCap(ref float stat, float chance, float softCap)
+    {
+        if (stat >= softCap)
+        {
+            return;
+        }
+
+        if (UnityEngine.Random.value < chance)
+        {
+            stat += 1;
+        }
     }
 
     private static List<HREmployeeTraitType> RollTraits()
@@ -156,7 +184,8 @@ public static class HRRecruitService
                 e.intelligenceGrowthMultiplier *= 0.7f;
                 break;
             case HREmployeeTraitType.Muggle:
-                e.magic = 0;
+                // 数值范围统一为 1~10，不再出现 0。
+                e.magic = MinStat;
                 e.magicLocked = true;
                 break;
             case HREmployeeTraitType.LowComprehension:
@@ -203,16 +232,16 @@ public static class HRRecruitService
 
     private static void ClampStats(HREmployeeData e)
     {
-        e.stamina = Mathf.Clamp(e.stamina, 1, 10);
-        e.intelligence = Mathf.Clamp(e.intelligence, 1, 10);
+        e.stamina = Mathf.Clamp(e.stamina, MinStat, MaxStat);
+        e.intelligence = Mathf.Clamp(e.intelligence, MinStat, MaxStat);
 
         if (e.magicLocked)
         {
-            e.magic = 0;
+            e.magic = MinStat;
         }
         else
         {
-            e.magic = Mathf.Clamp(e.magic, 1, 10);
+            e.magic = Mathf.Clamp(e.magic, MinStat, MaxStat);
         }
     }
 }

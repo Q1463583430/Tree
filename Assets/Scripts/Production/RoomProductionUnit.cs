@@ -10,6 +10,33 @@ public enum RoomProductionState
     PausedNoResource = 2,
 }
 
+public enum RoomEmployeeWorkType
+{
+    Generic = 0,
+    Farm = 1,
+    Cook = 2,
+    PineconePlant = 3,
+    Gym = 4,
+    Library = 5,
+    MagicRoom = 6,
+    HR = 7,
+}
+
+public enum RoomEmployeeTraitRuleMode
+{
+    Required = 0,
+    Preferred = 1,
+    Forbidden = 2,
+}
+
+[Serializable]
+public class RoomEmployeeTraitRule
+{
+    public HREmployeeTraitType trait = HREmployeeTraitType.InsectPhobia;
+    public RoomEmployeeTraitRuleMode mode = RoomEmployeeTraitRuleMode.Preferred;
+    [Min(0f)] public float scoreWeight = 1f;
+}
+
 // 单个房间的生产配置：周期时长、周期消耗、周期产出。
 [Serializable]
 public class RoomProductionPlan
@@ -17,6 +44,9 @@ public class RoomProductionPlan
     public string roomId;
     public List<ResourceAmount> constructionCosts = new List<ResourceAmount>();
     public int requiredSquirrels = 0;
+    public RoomEmployeeWorkType workType = RoomEmployeeWorkType.Generic;
+    public List<string> requiredEmployeeIds = new List<string>();
+    public List<RoomEmployeeTraitRule> traitRules = new List<RoomEmployeeTraitRule>();
     public float cycleSeconds = 30f;
     public List<ResourceAmount> cycleCosts = new List<ResourceAmount>();
     public List<ResourceAmount> cycleOutputs = new List<ResourceAmount>();
@@ -26,7 +56,9 @@ public class RoomProductionPlan
 // 单个房间实例的运行状态机：建造完成即运行，到点结算，资源不足停摆，支持手动停运/重启。
 public class RoomProductionUnit : MonoBehaviour
 {
-    private const float ProductionCycleSeconds = 30f;
+    [Header("生产周期")]
+    [Min(0.1f)]
+    public float ProductionCycleSeconds = 30f;
 
     [Header("依赖")]
     public ResourceManager resourceManager;
@@ -53,6 +85,8 @@ public class RoomProductionUnit : MonoBehaviour
     public event Action<RoomProductionUnit> OnSettleFailedByResource; //因资源不够而停摆
 
     private bool _hasStarted;
+    private float _activeOutputMultiplier = 1f;
+    private float _pendingOutputMultiplier = 1f;
 
     void Awake()
     {
@@ -128,6 +162,22 @@ public class RoomProductionUnit : MonoBehaviour
         plan = ClonePlan(newPlan);
     }
 
+    public float GetActiveOutputMultiplier()
+    {
+        return _activeOutputMultiplier;
+    }
+
+    public float GetPendingOutputMultiplier()
+    {
+        return _pendingOutputMultiplier;
+    }
+
+    // 配置后只会更新下一周期倍率，不影响当前正在进行的30秒。
+    public void SetPendingCycleBonusFromEmployees(IReadOnlyList<HREmployeeData> employees)
+    {
+        _pendingOutputMultiplier = Mathf.Max(0f, CalculateOutputMultiplier(employees));
+    }
+
     // 尝试完成建造并启动运行：
     // 1) 未建造时会先校验并扣除建造成本
     // 2) 已建造则直接进入运行
@@ -197,13 +247,30 @@ public class RoomProductionUnit : MonoBehaviour
         return Mathf.Max(0f, (float)(NextSettleTime - now));
     }
 
+    // 返回当前周期进度(0~1)，用于进度条显示。
+    public float GetProgress01(double now)
+    {
+        if (!IsBuilt) return 0f;
+        if (State != RoomProductionState.Running) return 0f;
+
+        float cycle = GetCycleSeconds();
+        double cycleStart = NextSettleTime - cycle;
+        double elapsed = now - cycleStart;
+        return Mathf.Clamp01((float)(elapsed / cycle));
+    }
+
+    public float GetCycleSeconds()
+    {
+        return Mathf.Max(0.1f, ProductionCycleSeconds);
+    }
+
     // 每天结束时调用：清空“正在进行中”的周期进度并从整周期重新计时。
     public void ResetProgressForNewDay(double now)
     {
         if (!IsBuilt) return;
         if (State != RoomProductionState.Running) return;
 
-        float cycle = ProductionCycleSeconds;
+        float cycle = GetCycleSeconds();
         NextSettleTime = now + cycle;
     }
 
@@ -215,6 +282,22 @@ public class RoomProductionUnit : MonoBehaviour
             return;
         }
 
+        if (!HasRequiredAssignments())
+        {
+            int required = Mathf.Max(0, plan.requiredSquirrels);
+            int assigned = 0;
+            RoomEmployeeAssignmentManager manager = RoomEmployeeAssignmentManager.Instance;
+            if (manager != null)
+            {
+                assigned = manager.GetAssignedCount(this);
+            }
+
+            LogDebug("启动等待: 未完成松鼠分配, required=" + required + ", assigned=" + assigned);
+            ChangeState(RoomProductionState.PausedManual);
+            OnWorkerAllocationFailed?.Invoke(this);
+            return;
+        }
+
         if (!TryAcquireWorkers())
         {
             LogDebug("启动失败: 员工不足, requiredSquirrels=" + Mathf.Max(0, plan.requiredSquirrels));
@@ -223,10 +306,34 @@ public class RoomProductionUnit : MonoBehaviour
             return;
         }
 
-        float cycle = ProductionCycleSeconds;
+        float cycle = GetCycleSeconds();
         NextSettleTime = Time.timeAsDouble + cycle;
+        _activeOutputMultiplier = 1f;
+        SyncPendingMultiplierFromAssignments();
         LogDebug("开始运行: settleIn=" + cycle.ToString("0.0") + "s");
         ChangeState(RoomProductionState.Running);
+    }
+
+    private bool HasRequiredAssignments()
+    {
+        int required = Mathf.Max(0, plan.requiredSquirrels);
+        if (required <= 0)
+        {
+            return true;
+        }
+
+        RoomEmployeeAssignmentManager manager = RoomEmployeeAssignmentManager.Instance;
+        if (manager == null)
+        {
+            manager = FindObjectOfType<RoomEmployeeAssignmentManager>();
+        }
+
+        if (manager == null)
+        {
+            return false;
+        }
+
+        return manager.GetAssignedCount(this) >= required;
     }
 
     // 结算规则：到点时检查资源，足够则扣费并产出；不足则停摆。
@@ -241,7 +348,7 @@ public class RoomProductionUnit : MonoBehaviour
         if (workforceManager != null && workforceManager.HasAssignedStrikingEmployee(this))
         {
             LogDebug("周期结算跳过: 分配到罢工员工，本周期无产出");
-            float strikeCycle = ProductionCycleSeconds;
+            float strikeCycle = GetCycleSeconds();
             NextSettleTime = now + strikeCycle;
             return;
         }
@@ -256,12 +363,18 @@ public class RoomProductionUnit : MonoBehaviour
         }
 
         resourceManager.TrySpend(plan.cycleCosts);
-        resourceManager.Add(plan.cycleOutputs);
 
-        LogDebug("周期结算成功: -" + FormatResourceList(plan.cycleCosts) + ", +" + FormatResourceList(plan.cycleOutputs));
+        List<ResourceAmount> currentCycleOutputs = BuildOutputsWithMultiplier(plan.cycleOutputs, _activeOutputMultiplier);
+        resourceManager.Add(currentCycleOutputs);
 
-        float cycle = ProductionCycleSeconds;
+        LogDebug("周期结算成功: -" + FormatResourceList(plan.cycleCosts)
+            + ", +" + FormatResourceList(currentCycleOutputs)
+            + ", currentMul=" + _activeOutputMultiplier.ToString("0.###")
+            + ", nextMul=" + _pendingOutputMultiplier.ToString("0.###"));
+
+        float cycle = GetCycleSeconds();
         NextSettleTime = now + cycle;
+        _activeOutputMultiplier = _pendingOutputMultiplier;
 
         OnSettled?.Invoke(this);
     }
@@ -287,7 +400,7 @@ public class RoomProductionUnit : MonoBehaviour
 
         if (workforceManager == null)
         {
-            Debug.LogWarning($"{name} 员工分配失败: 未找到 WorkforceManager");
+            Debug.LogWarning($"{name} 员工分配失败 未找到 WorkforceManager");
             return false;
         }
 
@@ -323,10 +436,56 @@ public class RoomProductionUnit : MonoBehaviour
             roomId = src.roomId,
             constructionCosts = CloneResourceList(src.constructionCosts),
             requiredSquirrels = Mathf.Max(0, src.requiredSquirrels),
+            workType = src.workType,
+            requiredEmployeeIds = CloneStringList(src.requiredEmployeeIds),
+            traitRules = CloneTraitRules(src.traitRules),
             cycleSeconds = Mathf.Max(0.1f, src.cycleSeconds),
             cycleCosts = CloneResourceList(src.cycleCosts),
             cycleOutputs = CloneResourceList(src.cycleOutputs),
         };
+    }
+
+    private static List<string> CloneStringList(List<string> source)
+    {
+        if (source == null)
+        {
+            return new List<string>();
+        }
+
+        List<string> result = new List<string>(source.Count);
+        for (int i = 0; i < source.Count; i++)
+        {
+            result.Add(source[i]);
+        }
+
+        return result;
+    }
+
+    private static List<RoomEmployeeTraitRule> CloneTraitRules(List<RoomEmployeeTraitRule> source)
+    {
+        if (source == null)
+        {
+            return new List<RoomEmployeeTraitRule>();
+        }
+
+        List<RoomEmployeeTraitRule> result = new List<RoomEmployeeTraitRule>(source.Count);
+        for (int i = 0; i < source.Count; i++)
+        {
+            RoomEmployeeTraitRule rule = source[i];
+            if (rule == null)
+            {
+                continue;
+            }
+
+            result.Add(new RoomEmployeeTraitRule
+            {
+                trait = rule.trait,
+                mode = rule.mode,
+                scoreWeight = Mathf.Max(0f, rule.scoreWeight),
+            });
+        }
+
+        return result;
     }
 
     private static List<ResourceAmount> CloneResourceList(List<ResourceAmount> source)
@@ -370,5 +529,141 @@ public class RoomProductionUnit : MonoBehaviour
         }
 
         return string.Join(", ", parts);
+    }
+
+    private void SyncPendingMultiplierFromAssignments()
+    {
+        RoomEmployeeAssignmentManager manager = RoomEmployeeAssignmentManager.Instance;
+        if (manager == null)
+        {
+            _pendingOutputMultiplier = 1f;
+            return;
+        }
+
+        List<HREmployeeData> assigned = manager.GetAssignedEmployees(this);
+        _pendingOutputMultiplier = Mathf.Max(0f, CalculateOutputMultiplier(assigned));
+    }
+
+    private float CalculateOutputMultiplier(IReadOnlyList<HREmployeeData> employees)
+    {
+        if (employees == null || employees.Count == 0)
+        {
+            return 1f;
+        }
+
+        float totalRate = 0f;
+        for (int i = 0; i < employees.Count; i++)
+        {
+            HREmployeeData employee = employees[i];
+            if (employee == null)
+            {
+                continue;
+            }
+
+            int stat = GetCoreStatForWorkType(employee);
+            totalRate += HREmployeeData.GetProductionModifierRate(stat);
+            totalRate += GetTraitRateBonus(employee);
+        }
+
+        float avgRate = totalRate / Mathf.Max(1, employees.Count);
+        return Mathf.Max(0f, 1f + avgRate);
+    }
+
+    private int GetCoreStatForWorkType(HREmployeeData employee)
+    {
+        switch (plan.workType)
+        {
+            case RoomEmployeeWorkType.Farm:
+            case RoomEmployeeWorkType.Gym:
+                return Mathf.RoundToInt(employee.stamina);
+            case RoomEmployeeWorkType.Cook:
+            case RoomEmployeeWorkType.Library:
+            case RoomEmployeeWorkType.HR:
+                return Mathf.RoundToInt(employee.intelligence);
+            case RoomEmployeeWorkType.MagicRoom:
+                return Mathf.RoundToInt(employee.magic);
+            case RoomEmployeeWorkType.PineconePlant:
+                return Mathf.RoundToInt((employee.stamina + employee.intelligence) * 0.5f);
+            default:
+                return Mathf.RoundToInt((employee.stamina + employee.intelligence + employee.magic) / 3f);
+        }
+    }
+
+    private float GetTraitRateBonus(HREmployeeData employee)
+    {
+        if (employee.traits == null || employee.traits.Count == 0)
+        {
+            return 0f;
+        }
+
+        float bonus = 0f;
+        for (int i = 0; i < employee.traits.Count; i++)
+        {
+            HREmployeeTraitType trait = employee.traits[i];
+            switch (trait)
+            {
+                case HREmployeeTraitType.GardeningExpert:
+                    if (plan.workType == RoomEmployeeWorkType.Farm || plan.workType == RoomEmployeeWorkType.PineconePlant)
+                    {
+                        bonus += 0.03f;
+                    }
+                    break;
+                case HREmployeeTraitType.SmartTalent:
+                    if (plan.workType == RoomEmployeeWorkType.Cook || plan.workType == RoomEmployeeWorkType.Library || plan.workType == RoomEmployeeWorkType.HR)
+                    {
+                        bonus += 0.03f;
+                    }
+                    break;
+                case HREmployeeTraitType.MagicalGirl:
+                    if (plan.workType == RoomEmployeeWorkType.MagicRoom)
+                    {
+                        bonus += 0.03f;
+                    }
+                    break;
+                case HREmployeeTraitType.LuckyMouse:
+                    bonus += 0.02f;
+                    break;
+                case HREmployeeTraitType.LazySyndrome:
+                    bonus -= 0.03f;
+                    break;
+                case HREmployeeTraitType.LearningDisability:
+                    if (plan.workType == RoomEmployeeWorkType.Cook || plan.workType == RoomEmployeeWorkType.Library || plan.workType == RoomEmployeeWorkType.HR)
+                    {
+                        bonus -= 0.03f;
+                    }
+                    break;
+                case HREmployeeTraitType.LowComprehension:
+                    if (plan.workType == RoomEmployeeWorkType.MagicRoom)
+                    {
+                        bonus -= 0.03f;
+                    }
+                    break;
+            }
+        }
+
+        return bonus;
+    }
+
+    private static List<ResourceAmount> BuildOutputsWithMultiplier(List<ResourceAmount> baseOutputs, float multiplier)
+    {
+        if (baseOutputs == null || baseOutputs.Count == 0)
+        {
+            return new List<ResourceAmount>();
+        }
+
+        float safeMultiplier = Mathf.Max(0f, multiplier);
+        List<ResourceAmount> result = new List<ResourceAmount>(baseOutputs.Count);
+        for (int i = 0; i < baseOutputs.Count; i++)
+        {
+            ResourceAmount output = baseOutputs[i];
+            int amount = Mathf.Max(0, Mathf.FloorToInt(output.amount * safeMultiplier));
+            result.Add(new ResourceAmount
+            {
+                type = output.type,
+                amount = amount,
+            });
+        }
+
+        return result;
     }
 }
