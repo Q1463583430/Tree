@@ -20,12 +20,14 @@ public class HR : MonoBehaviour
     public HRRecruitPanel recruitPanel;
 
     [SerializeField] private bool hasRecruitedOnce;
+    [SerializeField] private string lastRecruitedEmployeeId;
 
     private float _nextGenerateAt;
     private bool _canGenerate;
     private RoomProductionUnit _roomProductionUnit;
 
     public bool HasRecruitedOnce => hasRecruitedOnce;
+    public string LastRecruitedEmployeeId => lastRecruitedEmployeeId;
 
     void Awake()
     {
@@ -40,6 +42,15 @@ public class HR : MonoBehaviour
         if (employeeRepository == null)
         {
             employeeRepository = HREmployeeRepository.EnsureInstance();
+        }
+
+        if (hasRecruitedOnce && string.IsNullOrWhiteSpace(lastRecruitedEmployeeId) && employeeRepository != null && employeeRepository.Count > 0)
+        {
+            HREmployeeData fallback = employeeRepository.Employees[employeeRepository.Count - 1];
+            if (fallback != null)
+            {
+                lastRecruitedEmployeeId = fallback.id;
+            }
         }
 
         if (_roomProductionUnit == null)
@@ -179,22 +190,15 @@ public class HR : MonoBehaviour
             return false;
         }
 
-        ResourceAmount cost = new ResourceAmount
+        if (!TrySpendRecruitCost(out failReason))
         {
-            type = ResourceType.Fruit,
-            amount = recruitFruitCost,
-        };
-
-        if (!resourceManager.TrySpend(cost))
-        {
-            float current = resourceManager.Get(ResourceType.Fruit);
-            failReason = $"果实不足（需要 {recruitFruitCost}，当前 {current:0}）";
             return false;
         }
 
         employee = HRRecruitService.Recruit(hrIntelligence, eliteHrBonus);
         employeeRepository.Add(employee);
         hasRecruitedOnce = true;
+        lastRecruitedEmployeeId = employee.id;
 
         if (syncSquirrelResourceOnRecruit)
         {
@@ -202,6 +206,100 @@ public class HR : MonoBehaviour
         }
 
         return true;
+    }
+
+    public bool TryReroll(out HREmployeeData employee, out string failReason)
+    {
+        employee = null;
+        failReason = string.Empty;
+
+        if (resourceManager == null)
+        {
+            failReason = "未找到 ResourceManager";
+            return false;
+        }
+
+        if (employeeRepository == null)
+        {
+            employeeRepository = HREmployeeRepository.EnsureInstance();
+            if (employeeRepository == null)
+            {
+                failReason = "未找到 HREmployeeRepository";
+                return false;
+            }
+        }
+
+        if (!EnsureRoomReadyForRecruit(out failReason))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(lastRecruitedEmployeeId))
+        {
+            failReason = "没有可重新招募的上一只鼠鼠，请先招募一次。";
+            return false;
+        }
+
+        string previousId = lastRecruitedEmployeeId.Trim();
+        if (!employeeRepository.TryGetById(previousId, out HREmployeeData previousEmployee) || previousEmployee == null)
+        {
+            failReason = "上一只鼠鼠已不存在，无法重新招募。";
+            return false;
+        }
+
+        if (!TrySpendRecruitCost(out failReason))
+        {
+            return false;
+        }
+
+        RoomEmployeeAssignmentManager assignmentManager = RoomEmployeeAssignmentManager.Instance;
+        if (assignmentManager != null)
+        {
+            RoomProductionUnit owner = assignmentManager.GetEmployeeOwner(previousId);
+            if (owner != null)
+            {
+                assignmentManager.TryUnassign(owner, previousId);
+            }
+        }
+
+        if (!employeeRepository.RemoveById(previousId, out _))
+        {
+            resourceManager.Add(ResourceType.Fruit, recruitFruitCost);
+            failReason = "删除上一只鼠鼠失败，已返还本次果实消耗。";
+            return false;
+        }
+
+        employee = HRRecruitService.Recruit(hrIntelligence, eliteHrBonus);
+        employeeRepository.Add(employee);
+        hasRecruitedOnce = true;
+        lastRecruitedEmployeeId = employee.id;
+        return true;
+    }
+
+    private bool TrySpendRecruitCost(out string failReason)
+    {
+        failReason = string.Empty;
+
+        if (resourceManager == null)
+        {
+            failReason = "未找到 ResourceManager";
+            return false;
+        }
+
+        ResourceAmount cost = new ResourceAmount
+        {
+            type = ResourceType.Fruit,
+            amount = recruitFruitCost,
+        };
+
+        if (resourceManager.TrySpend(cost))
+        {
+            return true;
+        }
+
+        float current = resourceManager.Get(ResourceType.Fruit);
+        failReason = $"果实不足（需要 {recruitFruitCost}，当前 {current:0}）";
+        return false;
     }
 
     private bool EnsureRoomReadyForRecruit(out string reason)

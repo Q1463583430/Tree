@@ -46,7 +46,7 @@ public class HRRecruitPanel : MonoBehaviour
     {
         if (closeButton != null) closeButton.onClick.AddListener(ClosePanel);
         if (recruitButton != null) recruitButton.onClick.AddListener(OnRecruitClicked);
-        if (rerollButton != null) rerollButton.onClick.AddListener(OnRecruitClicked);
+        if (rerollButton != null) rerollButton.onClick.AddListener(OnRerollClicked);
         if (openWarehouseButton != null) openWarehouseButton.onClick.AddListener(OpenWarehouse);
 
         if (root != null) root.SetActive(false);
@@ -105,6 +105,32 @@ public class HRRecruitPanel : MonoBehaviour
         if (messageText != null)
         {
             messageText.text = "招募成功！可继续重新招募。";
+        }
+
+        if (resultRoot != null) resultRoot.SetActive(true);
+        ApplyRecruitButtonState(true);
+
+        RefreshResult(employee);
+        RefreshResultImage(employee);
+    }
+
+    private void OnRerollClicked()
+    {
+        if (hrRoom == null)
+        {
+            if (messageText != null) messageText.text = "未绑定 HR 房间";
+            return;
+        }
+
+        if (!hrRoom.TryReroll(out HREmployeeData employee, out string failReason))
+        {
+            if (messageText != null) messageText.text = failReason;
+            return;
+        }
+
+        if (messageText != null)
+        {
+            messageText.text = "重新招募成功！已替换上一只鼠鼠并加入仓库。";
         }
 
         if (resultRoot != null) resultRoot.SetActive(true);
@@ -267,4 +293,5 @@ public class HRRecruitPanel : MonoBehaviour
             rerollButton.gameObject.SetActive(showReroll);
         }
     }
+
 }

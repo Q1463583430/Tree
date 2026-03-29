@@ -102,6 +102,37 @@ public class HREmployeeRepository : MonoBehaviour
         return false;
     }
 
+    public bool RemoveById(string employeeId, out HREmployeeData removedEmployee)
+    {
+        removedEmployee = null;
+        if (string.IsNullOrWhiteSpace(employeeId))
+        {
+            return false;
+        }
+
+        string id = employeeId.Trim();
+        for (int i = 0; i < employees.Count; i++)
+        {
+            HREmployeeData e = employees[i];
+            if (e == null || string.IsNullOrWhiteSpace(e.id))
+            {
+                continue;
+            }
+
+            if (!string.Equals(e.id, id, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            removedEmployee = e;
+            employees.RemoveAt(i);
+            OnRepositoryChanged?.Invoke();
+            return true;
+        }
+
+        return false;
+    }
+
     private void NormalizeEmployees()
     {
         for (int i = 0; i < employees.Count; i++)
