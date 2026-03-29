@@ -378,6 +378,22 @@ public class BluePrint : MonoBehaviour
             return;
         }
 
+        if (IsPointerOverUi())
+        {
+            if (previewInstance != null)
+            {
+                previewInstance.SetActive(false);
+            }
+
+            // 鼠标在 UI 上抬起时，忽略本次放置输入，避免点按钮时直接建到地图。
+            if (Input.GetMouseButtonUp(0))
+            {
+                previewIsValid = false;
+            }
+
+            return;
+        }
+
         bool hasPreview = UpdatePreviewFromMouse();
 
         if (Input.GetMouseButtonUp(0))
@@ -419,6 +435,11 @@ public class BluePrint : MonoBehaviour
         {
             UpdatePreviewFromMouse();
         }
+    }
+
+    private static bool IsPointerOverUi()
+    {
+        return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
     }
 
     private void HandleRightClickRemove()
