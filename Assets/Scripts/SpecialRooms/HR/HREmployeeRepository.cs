@@ -8,6 +8,7 @@ public class HREmployeeRepository : MonoBehaviour
     public static HREmployeeRepository Instance { get; private set; }
 
     public event Action<HREmployeeData> OnEmployeeAdded;
+    public event Action OnRepositoryChanged;
 
     [SerializeField] private List<HREmployeeData> employees = new List<HREmployeeData>();
 
@@ -30,5 +31,33 @@ public class HREmployeeRepository : MonoBehaviour
         if (employee == null) return;
         employees.Add(employee);
         OnEmployeeAdded?.Invoke(employee);
+        OnRepositoryChanged?.Invoke();
+    }
+
+    public bool TryGetById(string employeeId, out HREmployeeData employee)
+    {
+        employee = null;
+        if (string.IsNullOrWhiteSpace(employeeId))
+        {
+            return false;
+        }
+
+        string id = employeeId.Trim();
+        for (int i = 0; i < employees.Count; i++)
+        {
+            HREmployeeData e = employees[i];
+            if (e == null || string.IsNullOrWhiteSpace(e.id))
+            {
+                continue;
+            }
+
+            if (string.Equals(e.id, id, StringComparison.Ordinal))
+            {
+                employee = e;
+                return true;
+            }
+        }
+
+        return false;
     }
 }

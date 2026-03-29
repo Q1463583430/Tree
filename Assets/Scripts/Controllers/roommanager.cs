@@ -27,6 +27,9 @@ public class RoomDataProfile
 	[Header("员工需求")]
 	[Min(0)]
 	public int requiredWorkers = 0;
+	public RoomEmployeeWorkType workType = RoomEmployeeWorkType.Generic;
+	public List<string> requiredEmployeeIds = new List<string>();
+	public List<RoomEmployeeTraitRule> traitRules = new List<RoomEmployeeTraitRule>();
 
 	[Header("日均产出")]
 	public bool useCustomDailyOutputs = false;
@@ -45,6 +48,8 @@ public class RoomDataProfile
 		cycleCosts = NormalizeResourceList(cycleCosts);
 		cycleOutputs = NormalizeResourceList(cycleOutputs);
 		customDailyOutputs = NormalizeResourceList(customDailyOutputs);
+		requiredEmployeeIds = NormalizeEmployeeIds(requiredEmployeeIds);
+		traitRules = NormalizeTraitRules(traitRules);
 	}
 
 	public List<ResourceAmount> BuildDailyOutputs(float daySeconds)
@@ -99,10 +104,69 @@ public class RoomDataProfile
 			roomId = roomName,
 			constructionCosts = CloneResourceList(constructionCosts),
 			requiredSquirrels = Mathf.Max(0, requiredWorkers),
+			workType = workType,
+			requiredEmployeeIds = CloneStringList(requiredEmployeeIds),
+			traitRules = CloneTraitRules(traitRules),
 			cycleSeconds = Mathf.Max(0.1f, cycleSeconds),
 			cycleCosts = CloneResourceList(cycleCosts),
 			cycleOutputs = CloneResourceList(cycleOutputs),
 		};
+	}
+
+	private static List<string> NormalizeEmployeeIds(List<string> src)
+	{
+		if (src == null)
+		{
+			return new List<string>();
+		}
+
+		HashSet<string> set = new HashSet<string>();
+		List<string> result = new List<string>();
+		for (int i = 0; i < src.Count; i++)
+		{
+			string value = src[i];
+			if (string.IsNullOrWhiteSpace(value))
+			{
+				continue;
+			}
+
+			string id = value.Trim();
+			if (!set.Add(id))
+			{
+				continue;
+			}
+
+			result.Add(id);
+		}
+
+		return result;
+	}
+
+	private static List<RoomEmployeeTraitRule> NormalizeTraitRules(List<RoomEmployeeTraitRule> src)
+	{
+		if (src == null)
+		{
+			return new List<RoomEmployeeTraitRule>();
+		}
+
+		List<RoomEmployeeTraitRule> result = new List<RoomEmployeeTraitRule>(src.Count);
+		for (int i = 0; i < src.Count; i++)
+		{
+			RoomEmployeeTraitRule rule = src[i];
+			if (rule == null)
+			{
+				continue;
+			}
+
+			result.Add(new RoomEmployeeTraitRule
+			{
+				trait = rule.trait,
+				mode = rule.mode,
+				scoreWeight = Mathf.Max(0f, rule.scoreWeight),
+			});
+		}
+
+		return result;
 	}
 
 	private static List<ResourceAmount> NormalizeResourceList(List<ResourceAmount> src)
@@ -151,6 +215,49 @@ public class RoomDataProfile
 		for (int i = 0; i < src.Count; i++)
 		{
 			clone.Add(src[i]);
+		}
+
+		return clone;
+	}
+
+	private static List<string> CloneStringList(List<string> src)
+	{
+		if (src == null)
+		{
+			return new List<string>();
+		}
+
+		List<string> clone = new List<string>(src.Count);
+		for (int i = 0; i < src.Count; i++)
+		{
+			clone.Add(src[i]);
+		}
+
+		return clone;
+	}
+
+	private static List<RoomEmployeeTraitRule> CloneTraitRules(List<RoomEmployeeTraitRule> src)
+	{
+		if (src == null)
+		{
+			return new List<RoomEmployeeTraitRule>();
+		}
+
+		List<RoomEmployeeTraitRule> clone = new List<RoomEmployeeTraitRule>(src.Count);
+		for (int i = 0; i < src.Count; i++)
+		{
+			RoomEmployeeTraitRule rule = src[i];
+			if (rule == null)
+			{
+				continue;
+			}
+
+			clone.Add(new RoomEmployeeTraitRule
+			{
+				trait = rule.trait,
+				mode = rule.mode,
+				scoreWeight = Mathf.Max(0f, rule.scoreWeight),
+			});
 		}
 
 		return clone;

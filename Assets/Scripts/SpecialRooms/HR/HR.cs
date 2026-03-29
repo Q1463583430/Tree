@@ -9,13 +9,24 @@ public class HR : MonoBehaviour
     public bool syncSquirrelResourceOnRecruit = true;
     public bool openOnMouseDown = false;
 
+    [Header("自动产鼠")]
+    public bool autoGenerateEmployee = false;
+    [Min(1f)] public float generateIntervalSeconds = 30f;
+    public bool requireManualPlacementToStartGenerate = true;
+
     [Header("依赖")]
     public ResourceManager resourceManager;
     public HREmployeeRepository employeeRepository;
     public HRRecruitPanel recruitPanel;
 
+    private float _nextGenerateAt;
+    private bool _canGenerate;
+
     void Awake()
     {
+        // 当前版本需求：仅允许手动招募，禁用自动产鼠。
+        autoGenerateEmployee = false;
+
         if (resourceManager == null)
         {
             resourceManager = FindObjectOfType<ResourceManager>();
@@ -27,6 +38,44 @@ public class HR : MonoBehaviour
         }
 
         TryAutoBindRecruitPanel();
+
+        float interval = Mathf.Max(1f, generateIntervalSeconds);
+        _nextGenerateAt = Time.time + interval;
+        _canGenerate = !requireManualPlacementToStartGenerate;
+    }
+
+    void Update()
+    {
+        if (!autoGenerateEmployee)
+        {
+            return;
+        }
+
+        if (!_canGenerate)
+        {
+            return;
+        }
+
+        if (Time.time < _nextGenerateAt)
+        {
+            return;
+        }
+
+        float interval = Mathf.Max(1f, generateIntervalSeconds);
+
+        // 最多补发5次，避免长卡顿后在同一帧生成过多。
+        int safety = 0;
+        while (Time.time >= _nextGenerateAt && safety < 5)
+        {
+            TryGenerateEmployee(out _);
+            _nextGenerateAt += interval;
+            safety++;
+        }
+
+        if (Time.time >= _nextGenerateAt)
+        {
+            _nextGenerateAt = Time.time + interval;
+        }
     }
 
     void TryAutoBindRecruitPanel()
@@ -123,5 +172,50 @@ public class HR : MonoBehaviour
         }
 
         return true;
+    }
+
+    public bool TryGenerateEmployee(out HREmployeeData employee)
+    {
+        employee = null;
+
+        if (employeeRepository == null)
+        {
+            employeeRepository = HREmployeeRepository.Instance;
+            if (employeeRepository == null)
+            {
+                employeeRepository = FindObjectOfType<HREmployeeRepository>();
+            }
+        }
+
+        if (employeeRepository == null)
+        {
+            return false;
+        }
+
+        if (resourceManager == null)
+        {
+            resourceManager = ResourceManager.Instance;
+            if (resourceManager == null)
+            {
+                resourceManager = FindObjectOfType<ResourceManager>();
+            }
+        }
+
+        employee = HRRecruitService.Recruit(hrIntelligence, eliteHrBonus);
+        employeeRepository.Add(employee);
+
+        if (syncSquirrelResourceOnRecruit && resourceManager != null)
+        {
+            resourceManager.Add(ResourceType.Squirrel, 1);
+        }
+
+        return true;
+    }
+
+    // 由房间放置流程调用：只有手动放置并成功建造后，HR 才开始自动产鼠。
+    public void NotifyRoomPlacedAndReady()
+    {
+        _canGenerate = true;
+        _nextGenerateAt = Time.time + Mathf.Max(1f, generateIntervalSeconds);
     }
 }

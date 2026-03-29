@@ -46,7 +46,8 @@ public class ResourceState
 
 public class ResourceManager : MonoBehaviour
 {
-    private const int InitialEnergyValue = 100;
+    [Header("Energy 初始值")]
+    [Min(0)] public int initialEnergyValue = 200;
 
     //使用实例同一管理资源，仅可私有设置，可读
     public static ResourceManager Instance { get; private set; }
@@ -60,7 +61,7 @@ public class ResourceManager : MonoBehaviour
     [Header("初始资源配置")]
     public List<ResourceState> initialStates = new List<ResourceState>
     {
-        new ResourceState { type = ResourceType.Energy, current = 100, min = 100, max = 2000},
+        new ResourceState { type = ResourceType.Energy, current = 200, min = 0, max = 2000},
         new ResourceState { type = ResourceType.Root, current = 0, min = 0, max = 2000 },
         new ResourceState { type = ResourceType.Fruit, current = 0, min = 0, max = 2000 },
         new ResourceState { type = ResourceType.Squirrel, current = 0, min = 0, max = 2000 },
@@ -251,8 +252,8 @@ public class ResourceManager : MonoBehaviour
                 {
                     type = ResourceType.Energy,
                     min = 0,
-                    max = Mathf.Max(InitialEnergyValue, src.max),
-                    current = InitialEnergyValue,
+                    max = Mathf.Max(initialEnergyValue, src.max),
+                    current = initialEnergyValue,
                 };
             }
             else
@@ -276,7 +277,7 @@ public class ResourceManager : MonoBehaviour
                 type = ResourceType.Energy,
                 min = 0,
                 max = 2000,
-                current = InitialEnergyValue,
+                current = initialEnergyValue,
             });
         }
 
@@ -297,7 +298,7 @@ public class ResourceManager : MonoBehaviour
                 type = ResourceType.Energy,
                 min = 0,
                 max = 2000,
-                current = InitialEnergyValue,
+                current = initialEnergyValue,
             };
 
             _states[ResourceType.Energy] = runtime;
@@ -312,8 +313,8 @@ public class ResourceManager : MonoBehaviour
 
         int before = energyState.current;
         energyState.min = Mathf.Min(energyState.min, 0);
-        energyState.max = Mathf.Max(energyState.max, InitialEnergyValue);
-        energyState.current = InitialEnergyValue;
+        energyState.max = Mathf.Max(energyState.max, initialEnergyValue);
+        energyState.current = initialEnergyValue;
         OnResourceChanged?.Invoke(ResourceType.Energy, before, energyState.current);
     }
 }

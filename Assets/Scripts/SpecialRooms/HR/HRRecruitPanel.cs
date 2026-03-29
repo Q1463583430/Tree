@@ -17,6 +17,12 @@ public class HRRecruitPanel : MonoBehaviour
     public Button closeButton;
     public Button recruitButton;
     public Button rerollButton;
+    public Button openWarehouseButton;
+
+    [Header("结果图片")]
+    public Image resultImage;
+    public Sprite recruitSuccessSprite;
+    public bool hideResultImageOnOpen = true;
 
     [Header("文本")]
     public TMP_Text titleText ;
@@ -32,6 +38,7 @@ public class HRRecruitPanel : MonoBehaviour
         if (closeButton != null) closeButton.onClick.AddListener(ClosePanel);
         if (recruitButton != null) recruitButton.onClick.AddListener(OnRecruitClicked);
         if (rerollButton != null) rerollButton.onClick.AddListener(OnRecruitClicked);
+        if (openWarehouseButton != null) openWarehouseButton.onClick.AddListener(OpenWarehouse);
 
         if (root != null) root.SetActive(false);
     }
@@ -54,6 +61,11 @@ public class HRRecruitPanel : MonoBehaviour
         if (resultRoot != null) resultRoot.SetActive(false);
         if (recruitButton != null) recruitButton.gameObject.SetActive(true);
         if (rerollButton != null) rerollButton.gameObject.SetActive(false);
+
+        if (resultImage != null && hideResultImageOnOpen)
+        {
+            resultImage.gameObject.SetActive(false);
+        }
     }
 
     public void ClosePanel()
@@ -85,6 +97,13 @@ public class HRRecruitPanel : MonoBehaviour
         if (rerollButton != null) rerollButton.gameObject.SetActive(true);
 
         RefreshResult(employee);
+        RefreshResultImage();
+    }
+
+    private void OpenWarehouse()
+    {
+        RoomEmployeeWarehouseUI ui = RoomEmployeeWarehouseUI.EnsureInstance();
+        ui.OpenWarehouse();
     }
 
     private void RefreshResult(HREmployeeData e)
@@ -143,5 +162,20 @@ public class HRRecruitPanel : MonoBehaviour
             case HREmployeeTraitType.BirdStomach: return "小鸟胃";
             default: return trait.ToString();
         }
+    }
+
+    private void RefreshResultImage()
+    {
+        if (resultImage == null)
+        {
+            return;
+        }
+
+        if (recruitSuccessSprite != null)
+        {
+            resultImage.sprite = recruitSuccessSprite;
+        }
+
+        resultImage.gameObject.SetActive(true);
     }
 }
