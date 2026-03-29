@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 5038906383787421353}
   - component: {fileID: 6189699004770766614}
   - component: {fileID: 7377024325811745609}
+  - component: {fileID: 4279249404134588263}
   m_Layer: 0
   m_Name: WonderfulRoom
   m_TagString: Untagged
@@ -132,3 +133,56 @@ MonoBehaviour:
     cycleOutputs: []
   builtAtStart: 1
   enableDebugLogs: 1
+--- !u!114 &4279249404134588263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4485632891988691107}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33d2521ab8c757945b1a9d354d8e0ab9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  roomType: 603
+  defaultQuality: 1
+  repository: {fileID: 0}
+  useTraitQualityOverride: 1
+  traitQualityRules:
+  - trait: 10
+    quality: 2
+  - trait: 19
+    quality: 0
+  - trait: 9
+    quality: 3
+  profiles:
+  - quality: 0
+    options:
+    - attribute: 3
+      delta: 2
+      chance: 0.1
+    - attribute: 3
+      delta: 1
+      chance: 0.5
+  - quality: 1
+    options:
+    - attribute: 3
+      delta: 2
+      chance: 0.05
+    - attribute: 3
+      delta: 1
+      chance: 0.25
+  - quality: 2
+    options:
+    - attribute: 3
+      delta: 2
+      chance: 0.025
+    - attribute: 3
+      delta: 1
+      chance: 0.125
+  - quality: 3
+    options:
+    - attribute: 3
+      delta: 0
+      chance: 1

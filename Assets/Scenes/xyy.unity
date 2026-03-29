@@ -4762,6 +4762,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e25bb19853eb04240b3f2270b8f647a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  dontDestroyOnLoad: 1
+  baseCapacity: 50
   employees: []
 --- !u!4 &1571461052
 Transform:

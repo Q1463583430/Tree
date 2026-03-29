@@ -101,6 +101,12 @@ public class HR : MonoBehaviour
             return false;
         }
 
+        if (employeeRepository.IsFull)
+        {
+            failReason = $"员工已满（上限 {employeeRepository.Capacity}）";
+            return false;
+        }
+
         ResourceAmount cost = new ResourceAmount
         {
             type = ResourceType.Fruit,
@@ -115,7 +121,13 @@ public class HR : MonoBehaviour
         }
 
         employee = HRRecruitService.Recruit(hrIntelligence, eliteHrBonus);
-        employeeRepository.Add(employee);
+        if (!employeeRepository.TryAdd(employee))
+        {
+            resourceManager.Add(ResourceType.Fruit, recruitFruitCost);
+            employee = null;
+            failReason = $"员工已满（上限 {employeeRepository.Capacity}）";
+            return false;
+        }
 
         if (syncSquirrelResourceOnRecruit)
         {

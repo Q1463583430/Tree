@@ -5,28 +5,28 @@ using UnityEngine;
 // 所有可挂载的特殊词条。
 public enum HREmployeeTraitType
 {
-    InsectPhobia = 1,
-    DarkCook = 2,
-    PineconeAllergy = 3,
-    Sickly = 4,
-    KneeInjury = 5,
-    SevereMyopia = 6,
-    LazySyndrome = 7,
-    LearningDisability = 8,
-    Muggle = 9,
-    LowComprehension = 10,
-    BigAppetite = 11,
-    UltimateBigAppetite = 12,
-    GardeningExpert = 13,
-    StrongBody = 14,
-    SmartTalent = 15,
-    MagicalGirl = 16,
-    FitnessFan = 17,
-    BookLover = 18,
-    MagicLover = 19,
-    LuckyMouse = 20,
-    EliteHR = 21,
-    BirdStomach = 22,
+    InsectPhobia = 1,          // 昆虫恐惧症
+    DarkCook = 2,              // 黑暗料理者
+    PineconeAllergy = 3,       // 松果过敏
+    Sickly = 4,                // 体弱多病
+    KneeInjury = 5,            // 膝盖中了一箭
+    SevereMyopia = 6,          // 重度近视
+    LazySyndrome = 7,          // 懒癌
+    LearningDisability = 8,    // 学习困难症
+    Muggle = 9,                // 麻瓜
+    LowComprehension = 10,     // 低悟性
+    BigAppetite = 11,          // 大胃袋
+    UltimateBigAppetite = 12,  // 究极大胃袋
+    GardeningExpert = 13,      // 园艺高手
+    StrongBody = 14,           // 身强体壮
+    SmartTalent = 15,          // 天资聪颖
+    MagicalGirl = 16,          // 马猴烧酒
+    FitnessFan = 17,           // 健美爱好者
+    BookLover = 18,            // 酷爱阅读者
+    MagicLover = 19,           // 喜爱魔法
+    LuckyMouse = 20,           // 幸运鼠
+    EliteHR = 21,              // 精英HR
+    BirdStomach = 22,          // 小鸟胃
 }
 
 [Serializable]
@@ -35,9 +35,9 @@ public class HREmployeeData
     public string id;
     public string displayName;
 
-    public int stamina;
-    public int intelligence;
-    public int magic;
+    public float stamina;
+    public float intelligence;
+    public float magic;
 
     public bool magicLocked;
 
