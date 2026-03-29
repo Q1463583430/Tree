@@ -63,7 +63,7 @@ public class HRAttributeTrainingRoom : MonoBehaviour
     public HRTrainingQuality defaultQuality = HRTrainingQuality.Normal;
 
     [Header("依赖")]
-    public HREmployeeRepository repository;
+    public EmployeeRepository repository;
 
     [Header("每日结算")]
     public bool settleOnDayEnded = true;
@@ -91,7 +91,7 @@ public class HRAttributeTrainingRoom : MonoBehaviour
 
         if (repository == null)
         {
-            repository = HREmployeeRepository.GetOrCreateInstance();
+            repository = EmployeeRepository.GetOrCreateInstance();
         }
 
         if (profiles == null || profiles.Count == 0)
@@ -119,7 +119,7 @@ public class HRAttributeTrainingRoom : MonoBehaviour
 
         if (repository == null)
         {
-            repository = HREmployeeRepository.GetOrCreateInstance();
+            repository = EmployeeRepository.GetOrCreateInstance();
         }
     }
 
@@ -133,7 +133,7 @@ public class HRAttributeTrainingRoom : MonoBehaviour
     {
         if (repository == null)
         {
-            Debug.LogWarning("[HRAttributeTrainingRoom] 未找到 HREmployeeRepository", this);
+            Debug.LogWarning("[HRAttributeTrainingRoom] 未找到 EmployeeRepository", this);
             return;
         }
 

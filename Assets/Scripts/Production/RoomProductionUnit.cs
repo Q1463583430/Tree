@@ -238,6 +238,14 @@ public class RoomProductionUnit : MonoBehaviour
             return;
         }
 
+        if (workforceManager != null && workforceManager.HasAssignedStrikingEmployee(this))
+        {
+            LogDebug("周期结算跳过: 分配到罢工员工，本周期无产出");
+            float strikeCycle = ProductionCycleSeconds;
+            NextSettleTime = now + strikeCycle;
+            return;
+        }
+
         if (!resourceManager.CanAfford(plan.cycleCosts))
         {
             LogDebug("周期结算失败: 资源不足, costs=" + FormatResourceList(plan.cycleCosts));

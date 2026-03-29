@@ -1,14 +1,14 @@
 using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(HREmployeeRepository))]
-public class HREmployeeRepositoryEditor : Editor
+[CustomEditor(typeof(EmployeeRepository))]
+public class EmployeeRepositoryEditor : Editor
 {
     public override void OnInspectorGUI()
     {
         DrawDefaultInspector();
 
-        HREmployeeRepository repo = (HREmployeeRepository)target;
+        EmployeeRepository repo = (EmployeeRepository)target;
         int count = repo != null ? repo.Count : 0;
         int capacity = repo != null ? repo.Capacity : 0;
         int baseCapacity = repo != null ? Mathf.Max(0, repo.baseCapacity) : 0;

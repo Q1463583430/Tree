@@ -148,6 +148,8 @@ MonoBehaviour:
   roomType: 602
   defaultQuality: 1
   repository: {fileID: 0}
+  settleOnDayEnded: 1
+  requireBuiltRoomToSettle: 1
   useTraitQualityOverride: 1
   traitQualityRules:
   - trait: 18

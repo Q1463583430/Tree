@@ -9,7 +9,7 @@ public class HREmployeeCapacityRoomBonus : MonoBehaviour
     [Header("触发条件")]
     public bool requireBuiltRoom = true;
 
-    public HREmployeeRepository repository;
+    public EmployeeRepository repository;
 
     private bool _registered;
     private RoomProductionUnit _roomUnit;
@@ -20,7 +20,7 @@ public class HREmployeeCapacityRoomBonus : MonoBehaviour
 
         if (repository == null)
         {
-            repository = HREmployeeRepository.GetOrCreateInstance();
+            repository = EmployeeRepository.GetOrCreateInstance();
         }
     }
 
@@ -76,7 +76,7 @@ public class HREmployeeCapacityRoomBonus : MonoBehaviour
 
         if (repository == null)
         {
-            repository = HREmployeeRepository.GetOrCreateInstance();
+            repository = EmployeeRepository.GetOrCreateInstance();
         }
 
         if (repository == null)

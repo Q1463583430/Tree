@@ -11,7 +11,7 @@ public class HR : MonoBehaviour
 
     [Header("依赖")]
     public ResourceManager resourceManager;
-    public HREmployeeRepository employeeRepository;
+    public EmployeeRepository employeeRepository;
     public HRRecruitPanel recruitPanel;
 
     void Awake()
@@ -23,7 +23,7 @@ public class HR : MonoBehaviour
 
         if (employeeRepository == null)
         {
-            employeeRepository = FindObjectOfType<HREmployeeRepository>();
+            employeeRepository = FindObjectOfType<EmployeeRepository>();
         }
 
         TryAutoBindRecruitPanel();
@@ -97,7 +97,7 @@ public class HR : MonoBehaviour
 
         if (employeeRepository == null)
         {
-            failReason = "未找到 HREmployeeRepository";
+            failReason = "未找到 EmployeeRepository";
             return false;
         }
 

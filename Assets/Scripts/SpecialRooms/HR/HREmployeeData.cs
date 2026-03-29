@@ -27,6 +27,7 @@ public enum HREmployeeTraitType
     LuckyMouse = 20,           // 幸运鼠
     EliteHR = 21,              // 精英HR
     BirdStomach = 22,          // 小鸟胃
+    Strike = 23,               // 罢工
 }
 
 [Serializable]
@@ -60,6 +61,39 @@ public class HREmployeeData
     public float eliteHrBonusChance = 0f;
 
     public List<HREmployeeTraitType> traits = new List<HREmployeeTraitType>();
+
+    public int GetDailyFruitCost()
+    {
+        return Mathf.Max(0, 10 + dailyFruitConsumptionDelta);
+    }
+
+    public bool HasTrait(HREmployeeTraitType trait)
+    {
+        return traits != null && traits.Contains(trait);
+    }
+
+    public void AddTrait(HREmployeeTraitType trait)
+    {
+        if (traits == null)
+        {
+            traits = new List<HREmployeeTraitType>();
+        }
+
+        if (!traits.Contains(trait))
+        {
+            traits.Add(trait);
+        }
+    }
+
+    public void RemoveTrait(HREmployeeTraitType trait)
+    {
+        if (traits == null)
+        {
+            return;
+        }
+
+        traits.Remove(trait);
+    }
 
     // 你的规则：属性决定生产加成。
     public static float GetProductionModifierRate(int value)
