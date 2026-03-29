@@ -91,6 +91,11 @@ public static class HRRecruitService
         List<HREmployeeTraitType> pool = new List<HREmployeeTraitType>();
         foreach (HREmployeeTraitType t in Enum.GetValues(typeof(HREmployeeTraitType)))
         {
+            if (!IsRollableTrait(t))
+            {
+                continue;
+            }
+
             pool.Add(t);
         }
 
@@ -101,6 +106,16 @@ public static class HRRecruitService
         if (UnityEngine.Random.value < 0.25f) PickOne(pool, selected);
 
         return selected;
+    }
+
+    private static bool IsRollableTrait(HREmployeeTraitType trait)
+    {
+        if (trait == HREmployeeTraitType.Strike)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static void PickOne(List<HREmployeeTraitType> pool, List<HREmployeeTraitType> selected)

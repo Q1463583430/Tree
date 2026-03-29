@@ -3,37 +3,37 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // 员工仓库：集中存放所有招募到的鼠鼠。
-public class HREmployeeRepository : MonoBehaviour
+public class EmployeeRepository : MonoBehaviour
 {
-    public static HREmployeeRepository Instance { get; private set; }
+    public static EmployeeRepository Instance { get; private set; }
 
-    public static HREmployeeRepository GetOrCreateInstance()
+    public static EmployeeRepository GetOrCreateInstance()
     {
         if (Instance != null)
         {
             return Instance;
         }
 
-        HREmployeeRepository found = FindObjectOfType<HREmployeeRepository>();
+        EmployeeRepository found = FindObjectOfType<EmployeeRepository>();
         if (found != null)
         {
             Instance = found;
             return found;
         }
 
-        GameObject go = new GameObject("HREmployeeRepository_Auto");
-        return go.AddComponent<HREmployeeRepository>();
+        GameObject go = new GameObject("EmployeeRepository_Auto");
+        return go.AddComponent<EmployeeRepository>();
     }
 
-    public event Action<HREmployeeData> OnEmployeeAdded; //添加员工事件
-    public event Action<HREmployeeData> OnEmployeeRemoved; //移除员工事件
+    public event Action<HREmployeeData> OnEmployeeAdded;
+    public event Action<HREmployeeData> OnEmployeeRemoved;
 
     [Header("全局设置")]
-    public bool dontDestroyOnLoad = true; //加载场景不变
+    public bool dontDestroyOnLoad = true;
 
     [Header("容量")]
     [Min(0)]
-    public int baseCapacity = 50; //基础容量
+    public int baseCapacity = 50;
 
     [SerializeField] private List<HREmployeeData> employees = new List<HREmployeeData>();
     private readonly Dictionary<UnityEngine.Object, int> _capacityBonuses = new Dictionary<UnityEngine.Object, int>();
@@ -42,7 +42,7 @@ public class HREmployeeRepository : MonoBehaviour
     public IReadOnlyList<HREmployeeData> Employees => employees;
     public int Capacity => Mathf.Max(0, baseCapacity + GetCapacityBonusTotal());
     public int RemainingCapacity => Mathf.Max(0, Capacity - Count);
-    public bool IsFull => Count >= Capacity; //员工是否满员
+    public bool IsFull => Count >= Capacity;
 
     void Awake()
     {
@@ -73,7 +73,7 @@ public class HREmployeeRepository : MonoBehaviour
         TryAdd(employee);
     }
 
-    public bool TryAdd(HREmployeeData employee) //添加员工
+    public bool TryAdd(HREmployeeData employee)
     {
         if (employee == null) return false;
         if (IsFull) return false;
@@ -83,7 +83,7 @@ public class HREmployeeRepository : MonoBehaviour
         return true;
     }
 
-    public bool Remove(HREmployeeData employee) //移除员工
+    public bool Remove(HREmployeeData employee)
     {
         if (employee == null) return false;
 
@@ -94,7 +94,7 @@ public class HREmployeeRepository : MonoBehaviour
         return true;
     }
 
-    public void RegisterCapacityBonus(UnityEngine.Object source, int bonus) //获取到添加员工上限的功能
+    public void RegisterCapacityBonus(UnityEngine.Object source, int bonus)
     {
         if (source == null) return;
         if (bonus == 0)
@@ -106,13 +106,13 @@ public class HREmployeeRepository : MonoBehaviour
         _capacityBonuses[source] = bonus;
     }
 
-    public void UnregisterCapacityBonus(UnityEngine.Object source) //取消员工上限增加
+    public void UnregisterCapacityBonus(UnityEngine.Object source)
     {
         if (source == null) return;
         _capacityBonuses.Remove(source);
     }
 
-    private int GetCapacityBonusTotal() //获取到所有的员工上限增加的能力
+    private int GetCapacityBonusTotal()
     {
         if (_capacityBonuses.Count == 0)
         {

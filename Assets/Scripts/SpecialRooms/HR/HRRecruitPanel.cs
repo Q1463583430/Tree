@@ -19,7 +19,7 @@ public class HRRecruitPanel : MonoBehaviour
     public Button rerollButton;
 
     [Header("文本")]
-    public TMP_Text titleText ;
+    public TMP_Text titleText;
     public TMP_Text messageText;
     public TMP_Text nameText;
     public TMP_Text staminaText;
@@ -141,6 +141,7 @@ public class HRRecruitPanel : MonoBehaviour
             case HREmployeeTraitType.LuckyMouse: return "幸运鼠";
             case HREmployeeTraitType.EliteHR: return "精英HR";
             case HREmployeeTraitType.BirdStomach: return "小鸟胃";
+            case HREmployeeTraitType.Strike: return "罢工";
             default: return trait.ToString();
         }
     }
