@@ -26,7 +26,9 @@ public class RoomProductionPlan
 // 单个房间实例的运行状态机：建造完成即运行，到点结算，资源不足停摆，支持手动停运/重启。
 public class RoomProductionUnit : MonoBehaviour
 {
-    private const float ProductionCycleSeconds = 30f;
+    [Header("生产周期")]
+    [Min(0.1f)]
+    public float ProductionCycleSeconds = 30f;
 
     [Header("依赖")]
     public ResourceManager resourceManager;
@@ -197,13 +199,30 @@ public class RoomProductionUnit : MonoBehaviour
         return Mathf.Max(0f, (float)(NextSettleTime - now));
     }
 
+    // 返回当前周期进度(0~1)，用于进度条显示。
+    public float GetProgress01(double now)
+    {
+        if (!IsBuilt) return 0f;
+        if (State != RoomProductionState.Running) return 0f;
+
+        float cycle = GetCycleSeconds();
+        double cycleStart = NextSettleTime - cycle;
+        double elapsed = now - cycleStart;
+        return Mathf.Clamp01((float)(elapsed / cycle));
+    }
+
+    public float GetCycleSeconds()
+    {
+        return Mathf.Max(0.1f, ProductionCycleSeconds);
+    }
+
     // 每天结束时调用：清空“正在进行中”的周期进度并从整周期重新计时。
     public void ResetProgressForNewDay(double now)
     {
         if (!IsBuilt) return;
         if (State != RoomProductionState.Running) return;
 
-        float cycle = ProductionCycleSeconds;
+        float cycle = GetCycleSeconds();
         NextSettleTime = now + cycle;
     }
 
@@ -223,7 +242,7 @@ public class RoomProductionUnit : MonoBehaviour
             return;
         }
 
-        float cycle = ProductionCycleSeconds;
+        float cycle = GetCycleSeconds();
         NextSettleTime = Time.timeAsDouble + cycle;
         LogDebug("开始运行: settleIn=" + cycle.ToString("0.0") + "s");
         ChangeState(RoomProductionState.Running);
@@ -241,7 +260,7 @@ public class RoomProductionUnit : MonoBehaviour
         if (workforceManager != null && workforceManager.HasAssignedStrikingEmployee(this))
         {
             LogDebug("周期结算跳过: 分配到罢工员工，本周期无产出");
-            float strikeCycle = ProductionCycleSeconds;
+            float strikeCycle = GetCycleSeconds();
             NextSettleTime = now + strikeCycle;
             return;
         }
@@ -260,7 +279,7 @@ public class RoomProductionUnit : MonoBehaviour
 
         LogDebug("周期结算成功: -" + FormatResourceList(plan.cycleCosts) + ", +" + FormatResourceList(plan.cycleOutputs));
 
-        float cycle = ProductionCycleSeconds;
+        float cycle = GetCycleSeconds();
         NextSettleTime = now + cycle;
 
         OnSettled?.Invoke(this);

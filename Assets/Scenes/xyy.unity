@@ -448,6 +448,54 @@ RectTransform:
   m_AnchoredPosition: {x: 182, y: -150}
   m_SizeDelta: {x: 500, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &106283635
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 106283637}
+  - component: {fileID: 106283636}
+  m_Layer: 0
+  m_Name: DailyCostAndGetManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &106283636
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 106283635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 359aa8d474f8cab4589565e79b643754, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  resourceManager: {fileID: 2016877192}
+  employeeRepository: {fileID: 1571461053}
+  scheduler: {fileID: 1845041865}
+  rootPerDay: 150
+--- !u!4 &106283637
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 106283635}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.36808407, y: -0.082211785, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &185925116
 GameObject:
   m_ObjectHideFlags: 0
@@ -613,6 +661,29 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 233460244}
   m_CullTransparentMesh: 1
+--- !u!1 &237327104 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1290643092774057258, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+  m_PrefabInstance: {fileID: 261904202}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &237327106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 237327104}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0688d90bc4eb68142be318c9348ca900, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  roomUnit: {fileID: 1744908812}
+  progressFill: {fileID: 355329283}
+  hideWhenNotRunning: 0
+  runningColor: {r: 0.25, g: 0.8, b: 0.35, a: 0.60784316}
+  pausedManualColor: {r: 0.65, g: 0.65, b: 0.65, a: 0.6745098}
+  pausedNoResourceColor: {r: 0.95, g: 0.45, b: 0.25, a: 0.6431373}
 --- !u!1 &246347681
 GameObject:
   m_ObjectHideFlags: 0
@@ -989,6 +1060,66 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 261403021}
   m_CullTransparentMesh: 1
+--- !u!1001 &261904202
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 847516776901688830, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 847516776901688830, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 847516776901688830, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 847516776901688830, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 847516776901688830, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 847516776901688830, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 847516776901688830, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 847516776901688830, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 847516776901688830, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 847516776901688830, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5269429175690847908, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      propertyPath: m_Name
+      value: HR_room
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1290643092774057258, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 237327106}
+  m_SourcePrefab: {fileID: 100100000, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
 --- !u!1 &330921279
 GameObject:
   m_ObjectHideFlags: 0
@@ -1246,6 +1377,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 352431114}
   m_CullTransparentMesh: 1
+--- !u!114 &355329283 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3760151031169338749, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+  m_PrefabInstance: {fileID: 261904202}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &404520094
 GameObject:
   m_ObjectHideFlags: 0
@@ -4110,6 +4252,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   resourceManager: {fileID: 2016877192}
+  employeeRepository: {fileID: 0}
 --- !u!4 &1241494732
 Transform:
   m_ObjectHideFlags: 0
@@ -4742,7 +4885,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1571461052}
-  - component: {fileID: 1571461051}
+  - component: {fileID: 1571461053}
   m_Layer: 0
   m_Name: EmployeeRepo
   m_TagString: Untagged
@@ -4750,21 +4893,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1571461051
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1571461050}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e25bb19853eb04240b3f2270b8f647a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  dontDestroyOnLoad: 1
-  baseCapacity: 50
-  employees: []
 --- !u!4 &1571461052
 Transform:
   m_ObjectHideFlags: 0
@@ -4780,6 +4908,116 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1571461053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1571461050}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e73ee59bf5e9c448877b31fa1af98c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dontDestroyOnLoad: 1
+  baseCapacity: 50
+  employees:
+  - id: 058b918ba53f4c15935ff060ff8ec4dd
+    displayName: "\u9F20\u5229\u5948\u7EEA"
+    stamina: 1
+    intelligence: 4
+    magic: 3
+    magicLocked: 0
+    canFarm: 1
+    canCook: 1
+    canPineconePlant: 1
+    staminaGrowthMultiplier: 1
+    intelligenceGrowthMultiplier: 1
+    magicGrowthMultiplier: 1
+    gymSuccessMultiplier: 1
+    librarySuccessMultiplier: 1.3
+    magicRoomSuccessMultiplier: 1
+    dailyFruitConsumptionDelta: -3
+    walnutCollectibleBonus: 0
+    eliteHrBonusChance: 0
+    traits: 1200000016000000
+  - id: 7915a8f4d2c64d9781bf70c76535b32c
+    displayName: "\u9F20\u65AF\u62FF"
+    stamina: 5
+    intelligence: 1
+    magic: 2
+    magicLocked: 0
+    canFarm: 0
+    canCook: 1
+    canPineconePlant: 0
+    staminaGrowthMultiplier: 1
+    intelligenceGrowthMultiplier: 1
+    magicGrowthMultiplier: 1
+    gymSuccessMultiplier: 1
+    librarySuccessMultiplier: 1
+    magicRoomSuccessMultiplier: 1
+    dailyFruitConsumptionDelta: 0
+    walnutCollectibleBonus: 0
+    eliteHrBonusChance: 0
+    traits: 010000000600000003000000
+  - id: 12af2fce07f24c6daa0b517f6b6ddcdd
+    displayName: "\u9F20\u742A\u5E0C"
+    stamina: 1
+    intelligence: 4
+    magic: 2
+    magicLocked: 0
+    canFarm: 1
+    canCook: 1
+    canPineconePlant: 1
+    staminaGrowthMultiplier: 1
+    intelligenceGrowthMultiplier: 1
+    magicGrowthMultiplier: 0.7
+    gymSuccessMultiplier: 1
+    librarySuccessMultiplier: 1
+    magicRoomSuccessMultiplier: 1
+    dailyFruitConsumptionDelta: 0
+    walnutCollectibleBonus: 0
+    eliteHrBonusChance: 0
+    traits: 040000000a000000
+  - id: f448e903f86241b4b0cb8a5e3de7baa6
+    displayName: "\u9F20\u9EBB\u8863"
+    stamina: 4
+    intelligence: 6
+    magic: 6
+    magicLocked: 0
+    canFarm: 1
+    canCook: 0
+    canPineconePlant: 1
+    staminaGrowthMultiplier: 1
+    intelligenceGrowthMultiplier: 1
+    magicGrowthMultiplier: 1
+    gymSuccessMultiplier: 1
+    librarySuccessMultiplier: 1
+    magicRoomSuccessMultiplier: 1
+    dailyFruitConsumptionDelta: 0
+    walnutCollectibleBonus: 0
+    eliteHrBonusChance: 0
+    traits: 020000000f000000
+  - id: b905a32006ac4b05b7a4009231867ac3
+    displayName: "\u9F20\u524D"
+    stamina: 3
+    intelligence: 2
+    magic: 9
+    magicLocked: 0
+    canFarm: 1
+    canCook: 1
+    canPineconePlant: 1
+    staminaGrowthMultiplier: 1
+    intelligenceGrowthMultiplier: 1
+    magicGrowthMultiplier: 1
+    gymSuccessMultiplier: 1.3
+    librarySuccessMultiplier: 1
+    magicRoomSuccessMultiplier: 1
+    dailyFruitConsumptionDelta: 0
+    walnutCollectibleBonus: 0
+    eliteHrBonusChance: 0
+    traits: 11000000
 --- !u!1 &1605428348
 GameObject:
   m_ObjectHideFlags: 0
@@ -4914,6 +5152,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1605428348}
   m_CullTransparentMesh: 1
+--- !u!114 &1744908812 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1096809601713440503, guid: 60ad605aabda7bd47922eb4c1916dc9f, type: 3}
+  m_PrefabInstance: {fileID: 261904202}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b300aa5cd101bd428398ea4edecd06f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1770649866
 GameObject:
   m_ObjectHideFlags: 0
@@ -6232,63 +6481,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!1001 &7427798038865105848
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 6974612055526320900, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974612055526320900, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974612055526320900, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974612055526320900, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974612055526320900, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974612055526320900, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974612055526320900, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974612055526320900, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974612055526320900, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974612055526320900, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8186307556942552339, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
-      propertyPath: m_Name
-      value: squirrel
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: a4ac13bb61ca4814994e2573e3556c6c, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -6303,9 +6495,10 @@ SceneRoots:
   - {fileID: 1461577249}
   - {fileID: 1241494732}
   - {fileID: 1845041866}
+  - {fileID: 106283637}
   - {fileID: 923530304}
   - {fileID: 1878737145}
   - {fileID: 1289398446}
   - {fileID: 495537597}
   - {fileID: 1828046954}
-  - {fileID: 7427798038865105848}
+  - {fileID: 261904202}
