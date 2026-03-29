@@ -10,7 +10,7 @@ public class BluePrint : MonoBehaviour
     public Button magicBuildingButton;
     public GameObject magicBuildingPanel;
     public CanvasGroup magicBuildingCanvasGroup;
-    public bool hidePanelOnStart = false;
+    public bool hidePanelOnStart = true;
     public bool togglePanelByButton = false;
 
     [Header("四个模块按钮")]

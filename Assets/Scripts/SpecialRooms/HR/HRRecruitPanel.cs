@@ -24,6 +24,8 @@ public class HRRecruitPanel : MonoBehaviour
     public Button closeButton;
     public Button recruitButton;
     public Button rerollButton;
+    public Button confirmButton;
+    public Button cancelButton;
     public Button openWarehouseButton;
 
     [Header("结果图片")]
@@ -47,6 +49,8 @@ public class HRRecruitPanel : MonoBehaviour
         if (closeButton != null) closeButton.onClick.AddListener(ClosePanel);
         if (recruitButton != null) recruitButton.onClick.AddListener(OnRecruitClicked);
         if (rerollButton != null) rerollButton.onClick.AddListener(OnRerollClicked);
+        if (confirmButton != null) confirmButton.onClick.AddListener(OnConfirmClicked);
+        if (cancelButton != null) cancelButton.onClick.AddListener(OnCancelClicked);
         if (openWarehouseButton != null) openWarehouseButton.onClick.AddListener(OpenWarehouse);
 
         if (root != null) root.SetActive(false);
@@ -54,6 +58,11 @@ public class HRRecruitPanel : MonoBehaviour
 
     public void OpenPanel()
     {
+        if (hrRoom != null)
+        {
+            hrRoom.ResetRecruitSession();
+        }
+
         if (root != null) root.SetActive(true);
 
         if (titleText != null)
@@ -65,7 +74,7 @@ public class HRRecruitPanel : MonoBehaviour
         {
             if (hrRoom != null)
             {
-                messageText.text = $"消耗 {hrRoom.recruitFruitCost} 果实进行招募";
+                messageText.text = $"消耗 {hrRoom.recruitFruitCost} 果实进行招募，确认后才会加入仓库";
             }
             else
             {
@@ -74,8 +83,7 @@ public class HRRecruitPanel : MonoBehaviour
         }
 
         if (resultRoot != null) resultRoot.SetActive(false);
-        bool showReroll = hrRoom != null && hrRoom.HasRecruitedOnce;
-        ApplyRecruitButtonState(showReroll);
+        ApplyRecruitButtonState(false);
 
         if (resultImage != null && hideResultImageOnOpen)
         {
@@ -85,6 +93,11 @@ public class HRRecruitPanel : MonoBehaviour
 
     public void ClosePanel()
     {
+        if (hrRoom != null)
+        {
+            hrRoom.CancelPendingRecruit();
+        }
+
         if (root != null) root.SetActive(false);
     }
 
@@ -104,7 +117,7 @@ public class HRRecruitPanel : MonoBehaviour
 
         if (messageText != null)
         {
-            messageText.text = "招募成功！可继续重新招募。";
+            messageText.text = "已抽到候选鼠鼠。可重抽，或点确定加入仓库。";
         }
 
         if (resultRoot != null) resultRoot.SetActive(true);
@@ -130,7 +143,7 @@ public class HRRecruitPanel : MonoBehaviour
 
         if (messageText != null)
         {
-            messageText.text = "重新招募成功！已替换上一只鼠鼠并加入仓库。";
+            messageText.text = "已重新抽取候选鼠鼠。可继续重抽，或点确定加入仓库。";
         }
 
         if (resultRoot != null) resultRoot.SetActive(true);
@@ -138,6 +151,63 @@ public class HRRecruitPanel : MonoBehaviour
 
         RefreshResult(employee);
         RefreshResultImage(employee);
+    }
+
+    private void OnConfirmClicked()
+    {
+        if (hrRoom == null)
+        {
+            if (messageText != null) messageText.text = "未绑定 HR 房间";
+            return;
+        }
+
+        if (!hrRoom.TryConfirmRecruit(out HREmployeeData employee, out string failReason))
+        {
+            if (messageText != null) messageText.text = failReason;
+            return;
+        }
+
+        if (messageText != null)
+        {
+            messageText.text = "招募成功！鼠鼠已加入仓库。";
+        }
+
+        if (resultRoot != null)
+        {
+            resultRoot.SetActive(true);
+        }
+
+        RefreshResult(employee);
+        RefreshResultImage(employee);
+        ApplyRecruitButtonState(false);
+    }
+
+    private void OnCancelClicked()
+    {
+        if (hrRoom == null)
+        {
+            if (messageText != null) messageText.text = "未绑定 HR 房间";
+            return;
+        }
+
+        hrRoom.CancelPendingRecruit();
+
+        if (messageText != null)
+        {
+            messageText.text = "已取消，本次候选鼠鼠已舍弃。";
+        }
+
+        if (resultRoot != null)
+        {
+            resultRoot.SetActive(false);
+        }
+
+        if (resultImage != null)
+        {
+            resultImage.gameObject.SetActive(false);
+        }
+
+        ApplyRecruitButtonState(false);
     }
 
     private void OpenWarehouse()
@@ -281,16 +351,26 @@ public class HRRecruitPanel : MonoBehaviour
         return recruitSuccessSprite;
     }
 
-    private void ApplyRecruitButtonState(bool showReroll)
+    private void ApplyRecruitButtonState(bool hasCandidate)
     {
         if (recruitButton != null)
         {
-            recruitButton.gameObject.SetActive(!showReroll);
+            recruitButton.gameObject.SetActive(true);
         }
 
         if (rerollButton != null)
         {
-            rerollButton.gameObject.SetActive(showReroll);
+            rerollButton.gameObject.SetActive(hasCandidate);
+        }
+
+        if (confirmButton != null)
+        {
+            confirmButton.gameObject.SetActive(hasCandidate);
+        }
+
+        if (cancelButton != null)
+        {
+            cancelButton.gameObject.SetActive(hasCandidate);
         }
     }
 

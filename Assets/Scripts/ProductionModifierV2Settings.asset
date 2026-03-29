@@ -13,6 +13,34 @@ MonoBehaviour:
   m_Name: ProductionModifierV2Settings
   m_EditorClassIdentifier: 
   useModifierV2: 1
-  enableVerboseLog: 0
-  traitCatalog: {fileID: 0}
-  workTypeMainStatMappings: []
+  enableVerboseLog: 1
+  defaultMainStat: 4
+  roomIdMainStatMappings:
+  - roomId: 201
+    mainStat: 0
+  - roomId: 202
+    mainStat: 0
+  - roomId: 203
+    mainStat: 0
+  - roomId: 301
+    mainStat: 2
+  - roomId: 302
+    mainStat: 2
+  - roomId: 303
+    mainStat: 2
+  - roomId: 401
+    mainStat: 0
+  - roomId: 402
+    mainStat: 0
+  - roomId: 403
+    mainStat: 0
+  - roomId: 404
+    mainStat: 0
+  - roomId: 405
+    mainStat: 0
+  - roomId: 406
+    mainStat: 0
+  - roomId: 407
+    mainStat: 0
+  - roomId: 408
+    mainStat: 0

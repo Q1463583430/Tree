@@ -19,15 +19,13 @@ public class HR : MonoBehaviour
     public HREmployeeRepository employeeRepository;
     public HRRecruitPanel recruitPanel;
 
-    [SerializeField] private bool hasRecruitedOnce;
-    [SerializeField] private string lastRecruitedEmployeeId;
+    [SerializeField] private HREmployeeData pendingRecruitEmployee;
 
     private float _nextGenerateAt;
     private bool _canGenerate;
     private RoomProductionUnit _roomProductionUnit;
 
-    public bool HasRecruitedOnce => hasRecruitedOnce;
-    public string LastRecruitedEmployeeId => lastRecruitedEmployeeId;
+    public bool HasPendingRecruitCandidate => pendingRecruitEmployee != null;
 
     void Awake()
     {
@@ -42,15 +40,6 @@ public class HR : MonoBehaviour
         if (employeeRepository == null)
         {
             employeeRepository = HREmployeeRepository.EnsureInstance();
-        }
-
-        if (hasRecruitedOnce && string.IsNullOrWhiteSpace(lastRecruitedEmployeeId) && employeeRepository != null && employeeRepository.Count > 0)
-        {
-            HREmployeeData fallback = employeeRepository.Employees[employeeRepository.Count - 1];
-            if (fallback != null)
-            {
-                lastRecruitedEmployeeId = fallback.id;
-            }
         }
 
         if (_roomProductionUnit == null)
@@ -195,15 +184,8 @@ public class HR : MonoBehaviour
             return false;
         }
 
-        employee = HRRecruitService.Recruit(hrIntelligence, eliteHrBonus);
-        employeeRepository.Add(employee);
-        hasRecruitedOnce = true;
-        lastRecruitedEmployeeId = employee.id;
-
-        if (syncSquirrelResourceOnRecruit)
-        {
-            resourceManager.Add(ResourceType.Squirrel, 1);
-        }
+        pendingRecruitEmployee = HRRecruitService.Recruit(hrIntelligence, eliteHrBonus);
+        employee = pendingRecruitEmployee;
 
         return true;
     }
@@ -234,16 +216,9 @@ public class HR : MonoBehaviour
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(lastRecruitedEmployeeId))
+        if (pendingRecruitEmployee == null)
         {
-            failReason = "没有可重新招募的上一只鼠鼠，请先招募一次。";
-            return false;
-        }
-
-        string previousId = lastRecruitedEmployeeId.Trim();
-        if (!employeeRepository.TryGetById(previousId, out HREmployeeData previousEmployee) || previousEmployee == null)
-        {
-            failReason = "上一只鼠鼠已不存在，无法重新招募。";
+            failReason = "没有可重抽的候选鼠鼠，请先点击招募。";
             return false;
         }
 
@@ -252,28 +227,69 @@ public class HR : MonoBehaviour
             return false;
         }
 
-        RoomEmployeeAssignmentManager assignmentManager = RoomEmployeeAssignmentManager.Instance;
-        if (assignmentManager != null)
-        {
-            RoomProductionUnit owner = assignmentManager.GetEmployeeOwner(previousId);
-            if (owner != null)
-            {
-                assignmentManager.TryUnassign(owner, previousId);
-            }
-        }
+        pendingRecruitEmployee = HRRecruitService.Recruit(hrIntelligence, eliteHrBonus);
+        employee = pendingRecruitEmployee;
+        return true;
+    }
 
-        if (!employeeRepository.RemoveById(previousId, out _))
+    public bool TryConfirmRecruit(out HREmployeeData employee, out string failReason)
+    {
+        employee = null;
+        failReason = string.Empty;
+
+        if (pendingRecruitEmployee == null)
         {
-            resourceManager.Add(ResourceType.Fruit, recruitFruitCost);
-            failReason = "删除上一只鼠鼠失败，已返还本次果实消耗。";
+            failReason = "没有可确认的候选鼠鼠，请先招募。";
             return false;
         }
 
-        employee = HRRecruitService.Recruit(hrIntelligence, eliteHrBonus);
+        if (employeeRepository == null)
+        {
+            employeeRepository = HREmployeeRepository.EnsureInstance();
+            if (employeeRepository == null)
+            {
+                failReason = "未找到 HREmployeeRepository";
+                return false;
+            }
+        }
+
+        employee = pendingRecruitEmployee;
         employeeRepository.Add(employee);
-        hasRecruitedOnce = true;
-        lastRecruitedEmployeeId = employee.id;
+        pendingRecruitEmployee = null;
+
+        if (syncSquirrelResourceOnRecruit)
+        {
+            if (resourceManager == null)
+            {
+                resourceManager = ResourceManager.Instance;
+                if (resourceManager == null)
+                {
+                    resourceManager = FindObjectOfType<ResourceManager>();
+                }
+            }
+
+            if (resourceManager != null)
+            {
+                resourceManager.Add(ResourceType.Squirrel, 1);
+            }
+        }
+
         return true;
+    }
+
+    public void CancelPendingRecruit()
+    {
+        pendingRecruitEmployee = null;
+    }
+
+    public HREmployeeData GetPendingRecruitCandidate()
+    {
+        return pendingRecruitEmployee;
+    }
+
+    public void ResetRecruitSession()
+    {
+        CancelPendingRecruit();
     }
 
     private bool TrySpendRecruitCost(out string failReason)

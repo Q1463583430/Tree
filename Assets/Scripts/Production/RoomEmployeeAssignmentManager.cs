@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 手动配置房间鼠鼠：从仓库分配到房间，并将生产加成延后到下个周期生效。
+// 手动配置房间鼠鼠：从仓库分配到房间，并将生产加成在本周期直接加成。
 public class RoomEmployeeAssignmentManager : MonoBehaviour
 {
     public static RoomEmployeeAssignmentManager Instance { get; private set; }
