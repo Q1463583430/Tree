@@ -6,7 +6,7 @@ using TMPro;
 
 public class BluePrint : MonoBehaviour
 {
-    public Button closeButton;
+    public bool isMagic = true;
 
     [Header("主按钮与主面板")]
     public Button magicBuildingButton;
@@ -34,7 +34,7 @@ public class BluePrint : MonoBehaviour
     [Min(1f)] public float roomButtonMinWidth = 180f;
     [Min(1f)] public float roomButtonMinHeight = 96f;
     [Min(0f)] public float roomButtonExtraHitY = 18f;
-    [Min(1f)] public float pageNavButtonMinHeight = 64f;
+    [Min(1f)] public float pageNavButtonMinHeight = 50f;
     [Min(0f)] public float pageNavButtonExtraHitY = 14f;
 
     [Header("房间数据接入")]
@@ -48,6 +48,10 @@ public class BluePrint : MonoBehaviour
     public float roomZOffset = -0.01f;
     public Color previewValidColor = new Color(0.3f, 1f, 0.4f, 0.65f);
     public Color previewInvalidColor = new Color(1f, 0.3f, 0.3f, 0.65f);
+
+    [Header("房间运行UI")]
+    public RoomProgressBarUI roomProgressUiPrefab;
+    public Vector3 roomProgressUiLocalOffset = new Vector3(0f, 1.6f, 0f);
 
     private const int RoomsPerPage = 4;
     private const float ForcedRoomZ = -0.01f;
@@ -91,7 +95,11 @@ public class BluePrint : MonoBehaviour
 
         if (magicBuildingButton != null)
         {
-            magicBuildingButton.onClick.AddListener(ToggleMagicBuildingPanel);
+            // 若 Inspector 已绑定 onClick，则不再重复添加运行时监听，避免一次点击触发两个切换函数。
+            if (magicBuildingButton.onClick.GetPersistentEventCount() == 0)
+            {
+                magicBuildingButton.onClick.AddListener(ToggleMagicBuildingPanel);
+            }
         }
 
         if (productionButton != null)
@@ -130,6 +138,7 @@ public class BluePrint : MonoBehaviour
         if (magicBuildingPanel != null)
         {
             magicBuildingPanel.SetActive(!hidePanelOnStart);
+            isMagic = magicBuildingPanel.activeSelf;
         }
 
         EnsureCatalogReady();
@@ -822,6 +831,8 @@ public class BluePrint : MonoBehaviour
                 return false;
             }
 
+            AttachRoomProgressUi(placedObject, productionUnit);
+
             ActivatePlacedHrGeneration(placedObject);
         }
         else
@@ -840,6 +851,26 @@ public class BluePrint : MonoBehaviour
 
         placedRoomObjects[placedRoom] = placedObject;
         return true;
+    }
+
+    private void AttachRoomProgressUi(GameObject placedObject, RoomProductionUnit productionUnit)
+    {
+        if (placedObject == null || productionUnit == null || roomProgressUiPrefab == null)
+        {
+            return;
+        }
+
+        RoomProgressBarUI existingUi = placedObject.GetComponentInChildren<RoomProgressBarUI>(true);
+        if (existingUi != null)
+        {
+            existingUi.roomUnit = productionUnit;
+            return;
+        }
+
+        RoomProgressBarUI ui = Instantiate(roomProgressUiPrefab, placedObject.transform);
+        ui.transform.localPosition = roomProgressUiLocalOffset;
+        ui.transform.localRotation = Quaternion.identity;
+        ui.roomUnit = productionUnit;
     }
 
     private Vector3 GetRoomPlacementWorldPosition(RoomDefinition room, Vector2Int originCell)
@@ -1342,16 +1373,13 @@ public class BluePrint : MonoBehaviour
 
     public void MagicButton()
     {
-        magicBuildingPanel.SetActive(true);
-        magicBuildingButton.gameObject.SetActive(false);
-        closeButton.gameObject.SetActive(true);
+        if (magicBuildingPanel == null)
+        {
+            return;
+        }
 
-    }
-
-    public void CloseButton()
-    {
-        closeButton.gameObject.SetActive(false);
-        magicBuildingButton.gameObject.SetActive(true);
-        magicBuildingPanel.SetActive(false);
+        bool isOpenNext = !magicBuildingPanel.activeSelf;
+        magicBuildingPanel.SetActive(isOpenNext);
+        isMagic = isOpenNext;
     }
 }

@@ -12,8 +12,8 @@ public class DayCycleUIBinder : MonoBehaviour
     public TMP_Text remainingText;
 
     [Header("显示格式")]
-    public string dayPrefix = "Day";
-    public string remainingPrefix = "Remaining";
+    public string dayPrefix = "";
+    public string remainingPrefix = "";
 
     void Awake()
     {

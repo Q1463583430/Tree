@@ -30,6 +30,20 @@ public class HRRecruitPanel : MonoBehaviour
     public Image resultImage;
     public Sprite recruitSuccessSprite;
     public List<TraitImageBinding> firstTraitImageBindings = new List<TraitImageBinding>();
+    [Header("头像预设映射(按你提供的15张图)")]
+    public Sprite portraitFitnessFan;         // 健美爱好者
+    public Sprite portraitDarkCook;           // 厨师鼠鼠(黑暗料理者)
+    public Sprite portraitDebuff;             // 各种debuff
+    public Sprite portraitBigAppetite;        // 大胃袋
+    public Sprite portraitSmartTalent;        // 天资聪颖
+    public Sprite portraitLuckyMouse;         // 幸运鼠
+    public Sprite portraitNormal;             // 普通鼠鼠
+    public Sprite portraitEliteHR;            // 精英HR
+    public Sprite portraitStrongBody;         // 身强体壮
+    public Sprite portraitBookLover;          // 酷爱阅读者
+    public Sprite portraitMagicalGirl;        // 马猴烧酒
+    public Sprite portraitSevereMyopia;       // 高度近视
+    public List<Sprite> reusableUntitledPortraits = new List<Sprite>(); // 未标题图，可重复使用
     public bool logTraitImageResolve = true;
     public bool hideResultImageOnOpen = true;
 
@@ -157,7 +171,7 @@ public class HRRecruitPanel : MonoBehaviour
     {
         if (e == null) return;
 
-        if (nameText != null) nameText.text = $"姓名: {e.displayName}";
+        if (nameText != null) nameText.text = $"{e.displayName}";
         if (staminaText != null) staminaText.text = $"耐力: {e.stamina}";
         if (intelligenceText != null) intelligenceText.text = $"智力: {e.intelligence}";
         if (magicText != null) magicText.text = $"魔力: {e.magic}";
@@ -246,6 +260,8 @@ public class HRRecruitPanel : MonoBehaviour
         if (employee != null && employee.traits != null && employee.traits.Count > 0)
         {
             HREmployeeTraitType firstTrait = employee.traits[0];
+
+            // 1) 优先使用显式绑定（兼容你现有 firstTraitImageBindings 配置）
             for (int i = 0; i < firstTraitImageBindings.Count; i++)
             {
                 TraitImageBinding binding = firstTraitImageBindings[i];
@@ -261,6 +277,32 @@ public class HRRecruitPanel : MonoBehaviour
                         Debug.Log($"[HRRecruitPanel] 结果图命中首词条映射: {firstTrait}。", this);
                     }
                     return binding.sprite;
+                }
+            }
+
+            // 2) 使用代码内置的预设映射（按你提供的 15 张头像）
+            Sprite preset = ResolvePresetPortraitByTrait(firstTrait);
+            if (preset != null)
+            {
+                if (logTraitImageResolve)
+                {
+                    Debug.Log($"[HRRecruitPanel] 结果图命中预设映射: {firstTrait}。", this);
+                }
+                return preset;
+            }
+
+            // 3) 未覆盖词条使用“未标题”头像复用
+            if (reusableUntitledPortraits != null && reusableUntitledPortraits.Count > 0)
+            {
+                int idx = Mathf.Abs((int)firstTrait) % reusableUntitledPortraits.Count;
+                Sprite untitled = reusableUntitledPortraits[idx];
+                if (untitled != null)
+                {
+                    if (logTraitImageResolve)
+                    {
+                        Debug.Log($"[HRRecruitPanel] 首词条 {firstTrait} 使用未标题复用头像索引 {idx}。", this);
+                    }
+                    return untitled;
                 }
             }
 
@@ -280,6 +322,60 @@ public class HRRecruitPanel : MonoBehaviour
         }
 
         return recruitSuccessSprite;
+    }
+
+    private Sprite ResolvePresetPortraitByTrait(HREmployeeTraitType trait)
+    {
+        switch (trait)
+        {
+            case HREmployeeTraitType.FitnessFan:
+                return portraitFitnessFan;
+
+            case HREmployeeTraitType.DarkCook:
+                return portraitDarkCook;
+
+            case HREmployeeTraitType.BigAppetite:
+            case HREmployeeTraitType.UltimateBigAppetite:
+                return portraitBigAppetite;
+
+            case HREmployeeTraitType.SmartTalent:
+                return portraitSmartTalent;
+
+            case HREmployeeTraitType.LuckyMouse:
+                return portraitLuckyMouse;
+
+            case HREmployeeTraitType.EliteHR:
+                return portraitEliteHR;
+
+            case HREmployeeTraitType.StrongBody:
+                return portraitStrongBody;
+
+            case HREmployeeTraitType.BookLover:
+                return portraitBookLover;
+
+            case HREmployeeTraitType.MagicalGirl:
+                return portraitMagicalGirl;
+
+            case HREmployeeTraitType.SevereMyopia:
+                return portraitSevereMyopia;
+
+            case HREmployeeTraitType.InsectPhobia:
+            case HREmployeeTraitType.PineconeAllergy:
+            case HREmployeeTraitType.Sickly:
+            case HREmployeeTraitType.KneeInjury:
+            case HREmployeeTraitType.LazySyndrome:
+            case HREmployeeTraitType.LearningDisability:
+            case HREmployeeTraitType.Muggle:
+            case HREmployeeTraitType.LowComprehension:
+            case HREmployeeTraitType.BirdStomach:
+            case HREmployeeTraitType.Strike:
+                return portraitDebuff;
+
+            case HREmployeeTraitType.GardeningExpert:
+            case HREmployeeTraitType.MagicLover:
+            default:
+                return portraitNormal;
+        }
     }
 
     private void ApplyRecruitButtonState(bool showReroll)
