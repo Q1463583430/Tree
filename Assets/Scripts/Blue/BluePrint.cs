@@ -38,6 +38,7 @@ public class BluePrint : MonoBehaviour
     [Header("房间数据接入")]
     public Roommanager roomDataManager;
     public bool autoApplyProductionData = true;
+    public bool enableProductionPlanBindLog = false;
 
     [Header("网格放置参数")]
     public GridManager gridManager;
@@ -1056,6 +1057,15 @@ public class BluePrint : MonoBehaviour
         }
 
         string dataKey = room.GetRoomDataKey();
+        string beforeRoomId = productionUnit.plan != null ? productionUnit.plan.roomId : string.Empty;
+        if (enableProductionPlanBindLog)
+        {
+            Debug.Log("[BluePrint] 准备注入生产计划: placedObject=" + placedObject.name
+                + ", roomName=" + room.roomName
+                + ", dataKey=" + dataKey
+                + ", beforePlan.roomId=" + beforeRoomId, this);
+        }
+
         if (string.IsNullOrWhiteSpace(dataKey))
         {
             Debug.LogWarning($"{name} 房间[{room.roomName}]未配置数据键，无法注入生产数据。", this);
@@ -1064,8 +1074,24 @@ public class BluePrint : MonoBehaviour
 
         if (!roomDataManager.TryApplyProductionPlan(dataKey, productionUnit))
         {
+            if (enableProductionPlanBindLog)
+            {
+                Debug.LogWarning("[BluePrint] 注入生产计划失败: placedObject=" + placedObject.name
+                    + ", roomName=" + room.roomName
+                    + ", dataKey=" + dataKey
+                    + ", afterPlan.roomId=" + (productionUnit.plan != null ? productionUnit.plan.roomId : string.Empty), this);
+            }
+
             Debug.LogWarning($"{name} 找不到房间数据[{dataKey}]，请检查 Roommanager.roomProfiles。", this);
             return false;
+        }
+
+        if (enableProductionPlanBindLog)
+        {
+            Debug.Log("[BluePrint] 注入生产计划成功: placedObject=" + placedObject.name
+                + ", roomName=" + room.roomName
+                + ", dataKey=" + dataKey
+                + ", afterPlan.roomId=" + (productionUnit.plan != null ? productionUnit.plan.roomId : string.Empty), this);
         }
 
         return true;

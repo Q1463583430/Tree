@@ -273,6 +273,9 @@ public class Roommanager : MonoBehaviour
 	[Header("房间数据配置")]
 	public List<RoomDataProfile> roomProfiles = new List<RoomDataProfile>();
 
+	[Header("调试")]
+	public bool enableApplyProductionPlanLog = false;
+
 	private readonly Dictionary<string, RoomDataProfile> _profileByName = new Dictionary<string, RoomDataProfile>();
 
 	public IReadOnlyList<RoomDataProfile> Profiles => roomProfiles;
@@ -319,15 +322,35 @@ public class Roommanager : MonoBehaviour
 	{
 		if (targetUnit == null)
 		{
+			if (enableApplyProductionPlanLog)
+			{
+				Debug.LogWarning("[Roommanager] TryApplyProductionPlan 失败: targetUnit 为空。");
+			}
+
 			return false;
 		}
 
 		if (!TryGetProfile(roomName, out RoomDataProfile profile))
 		{
+			if (enableApplyProductionPlanLog)
+			{
+				Debug.LogWarning("[Roommanager] TryApplyProductionPlan 失败: 未找到 roomName=" + roomName + " 的配置。", targetUnit);
+			}
+
 			return false;
 		}
 
-		targetUnit.ApplyPlan(profile.ToProductionPlan());
+		RoomProductionPlan plan = profile.ToProductionPlan();
+		targetUnit.ApplyPlan(plan);
+
+		if (enableApplyProductionPlanLog)
+		{
+			Debug.Log("[Roommanager] TryApplyProductionPlan 成功: roomName=" + roomName
+				+ ", profile.roomName=" + profile.roomName
+				+ ", appliedPlan.roomId=" + plan.roomId
+				+ ", targetUnit=" + targetUnit.name, targetUnit);
+		}
+
 		return true;
 	}
 

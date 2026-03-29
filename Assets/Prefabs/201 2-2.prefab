@@ -121,7 +121,7 @@ MonoBehaviour:
   resourceManager: {fileID: 0}
   workforceManager: {fileID: 0}
   plan:
-    roomId: 1
+    roomId: 201
     constructionCosts:
     - type: 0
       amount: 50
@@ -135,4 +135,4 @@ MonoBehaviour:
     - type: 0
       amount: 30
   builtAtStart: 0
-  enableDebugLogs: 0
+  enableDebugLogs: 1

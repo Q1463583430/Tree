@@ -492,7 +492,7 @@ MonoBehaviour:
   resourceManager: {fileID: 0}
   workforceManager: {fileID: 0}
   plan:
-    roomId: "\u677E\u9F20HR\u9762\u8BD5\u95F4"
+    roomId: 101
     constructionCosts:
     - type: 0
       amount: 100
@@ -531,3 +531,4 @@ MonoBehaviour:
   employeeRepository: {fileID: 0}
   recruitPanel: {fileID: 0}
   hasRecruitedOnce: 0
+  lastRecruitedEmployeeId: 

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6216982171070861530}
   - component: {fileID: 5584144478582914579}
   - component: {fileID: 6561275370941711828}
+  - component: {fileID: -6424501075824272184}
   m_Layer: 0
   m_Name: 203 3-2
   m_TagString: Untagged
@@ -105,3 +106,29 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-6424501075824272184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2314242239851474701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b300aa5cd101bd428398ea4edecd06f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  resourceManager: {fileID: 0}
+  workforceManager: {fileID: 0}
+  plan:
+    roomId: 203
+    constructionCosts: []
+    requiredSquirrels: 1
+    workType: 0
+    requiredEmployeeIds: []
+    traitRules: []
+    cycleSeconds: 30
+    cycleCosts: []
+    cycleOutputs: []
+  builtAtStart: 0
+  enableDebugLogs: 1

@@ -176,6 +176,23 @@ public class RoomProductionUnit : MonoBehaviour
         _pendingOutputMultiplier = Mathf.Max(0f, CalculateOutputMultiplier(employees));
     }
 
+    // V2规则桥接入口：直接写入下一周期倍率，不影响当前正在进行的30秒。
+    public void SetPendingOutputMultiplierExternal(float multiplier)
+    {
+        _pendingOutputMultiplier = Mathf.Max(0f, multiplier);
+    }
+
+    // V2规则桥接入口：用于“配置后立刻生效”。仅在运行中房间应用到当前周期。
+    public void ApplyCurrentOutputMultiplierExternal(float multiplier)
+    {
+        if (State != RoomProductionState.Running)
+        {
+            return;
+        }
+
+        _activeOutputMultiplier = Mathf.Max(0f, multiplier);
+    }
+
     // 尝试完成建造并启动运行：
     // 1) 未建造时会先校验并扣除建造成本
     // 2) 已建造则直接进入运行
@@ -345,13 +362,16 @@ public class RoomProductionUnit : MonoBehaviour
 
         resourceManager.TrySpend(plan.cycleCosts);
 
+        List<ResourceAmount> baseCycleOutputs = CloneResourceList(plan.cycleOutputs);
         List<ResourceAmount> currentCycleOutputs = BuildOutputsWithMultiplier(plan.cycleOutputs, _activeOutputMultiplier);
         resourceManager.Add(currentCycleOutputs);
 
         LogDebug("周期结算成功: -" + FormatResourceList(plan.cycleCosts)
+            + ", baseOut=" + FormatResourceList(baseCycleOutputs)
             + ", +" + FormatResourceList(currentCycleOutputs)
             + ", currentMul=" + _activeOutputMultiplier.ToString("0.###")
-            + ", nextMul=" + _pendingOutputMultiplier.ToString("0.###"));
+            + ", nextMul=" + _pendingOutputMultiplier.ToString("0.###")
+            + ", calcDetail={" + BuildCycleSettleDebugDetail() + "}");
 
         float cycle = ProductionCycleSeconds;
         NextSettleTime = now + cycle;
@@ -512,6 +532,28 @@ public class RoomProductionUnit : MonoBehaviour
         return string.Join(", ", parts);
     }
 
+    private string BuildCycleSettleDebugDetail()
+    {
+        RoomProductionModifierBreakdownV2 breakdown;
+        if (!RoomProductionModifierBridgeV2.TryGetLatestBreakdown(this, out breakdown) || breakdown == null)
+        {
+            return "v2Breakdown=none";
+        }
+
+        string squirrelDetails = "none";
+        if (breakdown.employeeRateDetails != null && breakdown.employeeRateDetails.Count > 0)
+        {
+            squirrelDetails = string.Join(" | ", breakdown.employeeRateDetails);
+        }
+
+        return "roomId=" + breakdown.roomId
+            + ", mainStat=" + breakdown.mainStat
+            + ", employees=" + breakdown.employeeCount
+            + ", statRateSum=" + breakdown.statRateSum.ToString("0.###")
+            + ", formula=max(0, 1+statRateSum)=" + breakdown.finalMultiplier.ToString("0.###")
+            + ", squirrels=[" + squirrelDetails + "]";
+    }
+
     private void SyncPendingMultiplierFromAssignments()
     {
         RoomEmployeeAssignmentManager manager = RoomEmployeeAssignmentManager.Instance;
@@ -637,7 +679,7 @@ public class RoomProductionUnit : MonoBehaviour
         for (int i = 0; i < baseOutputs.Count; i++)
         {
             ResourceAmount output = baseOutputs[i];
-            int amount = Mathf.Max(0, Mathf.FloorToInt(output.amount * safeMultiplier));
+            int amount = Mathf.Max(0, Mathf.RoundToInt(output.amount * safeMultiplier));
             result.Add(new ResourceAmount
             {
                 type = output.type,
