@@ -758,7 +758,8 @@ public class BluePrint : MonoBehaviour
             NormalizeHrProductionPlanForManualRecruit(placedObject, productionUnit);
 
             bool started = productionUnit.TryCompleteConstructionAndStart();
-            if (!started)
+            bool built = productionUnit.IsBuilt;
+            if (!started && !built)
             {
                 for (int i = 0; i < placedRoom.occupiedCells.Count; i++)
                 {
@@ -768,6 +769,11 @@ public class BluePrint : MonoBehaviour
                 Destroy(placedObject);
                 previewInvalidReason = GetPlacementFailureReason(productionUnit);
                 return false;
+            }
+
+            if (built && !started)
+            {
+                Debug.LogWarning($"{name} 房间[{selectedRoom.roomName}]已完成建设，但当前未进入运行状态；请先完成松鼠配置。", this);
             }
 
             ActivatePlacedHrGeneration(placedObject);
@@ -1140,6 +1146,17 @@ public class BluePrint : MonoBehaviour
         if (productionUnit == null)
         {
             return "房间启动失败，请检查房间配置。";
+        }
+
+        if (productionUnit.IsBuilt)
+        {
+            int requiredAssigned = Mathf.Max(0, productionUnit.plan.requiredSquirrels);
+            if (requiredAssigned > 0)
+            {
+                return "房间已建设成功，请先配置松鼠后再启动30秒周期生产。";
+            }
+
+            return "房间已建设成功，当前未运行，请检查运行依赖。";
         }
 
         if (!productionUnit.CanAffordConstruction())

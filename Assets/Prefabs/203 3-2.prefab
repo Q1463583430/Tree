@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5584144478582914579}
   - component: {fileID: 6561275370941711828}
   m_Layer: 0
-  m_Name: room_2_4
+  m_Name: 203 3-2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -29,7 +29,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 1, z: 4}
+  m_LocalScale: {x: 3, y: 2, z: 0.000000001}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}

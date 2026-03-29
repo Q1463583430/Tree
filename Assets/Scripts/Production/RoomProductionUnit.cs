@@ -66,7 +66,7 @@ public class RoomProductionUnit : MonoBehaviour
     public RoomProductionPlan plan = new RoomProductionPlan();
 
     [Header("生命周期")]
-    public bool builtAtStart = true;
+    public bool builtAtStart = false;
 
     [Header("调试")]
     public bool enableDebugLogs = true;
@@ -181,7 +181,7 @@ public class RoomProductionUnit : MonoBehaviour
     // 2) 已建造则直接进入运行
     public bool TryCompleteConstructionAndStart()
     {
-        if (resourceManager == null)
+        if (!IsBuilt && resourceManager == null)
         {
             Debug.LogWarning($"{name} 建造失败: 未找到 ResourceManager");
             return false;
@@ -197,14 +197,22 @@ public class RoomProductionUnit : MonoBehaviour
                 return false;
             }
 
-            resourceManager.TrySpend(plan.constructionCosts);
+            if (!resourceManager.TrySpend(plan.constructionCosts))
+            {
+                LogDebug("初始建设失败: 扣除资源失败, costs=" + FormatResourceList(plan.constructionCosts));
+                ChangeState(RoomProductionState.PausedNoResource);
+                OnConstructionFailedByResource?.Invoke(this);
+                return false;
+            }
+
             IsBuilt = true;
             LogDebug("初始建设完成并扣费: costs=" + FormatResourceList(plan.constructionCosts));
             OnConstructionCompleted?.Invoke(this);
         }
 
+        // 建设与运行解耦：允许先建造成功，待配置松鼠后再进入30秒生产周期。
         StartRunning();
-        return true;
+        return IsBuilt;
     }
 
     // 手动停运：无论当前是否运行，都转到手动停运状态。
@@ -273,9 +281,9 @@ public class RoomProductionUnit : MonoBehaviour
                 assigned = manager.GetAssignedCount(this);
             }
 
-            LogDebug("启动等待: 未完成松鼠分配, required=" + required + ", assigned=" + assigned);
+            LogDebug("已建设，等待松鼠配置后启动: required=" + required + ", assigned=" + assigned);
+            SyncPendingMultiplierFromAssignments();
             ChangeState(RoomProductionState.PausedManual);
-            OnWorkerAllocationFailed?.Invoke(this);
             return;
         }
 
