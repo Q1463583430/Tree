@@ -26,6 +26,8 @@ public class RoomProductionPlan
 // 单个房间实例的运行状态机：建造完成即运行，到点结算，资源不足停摆，支持手动停运/重启。
 public class RoomProductionUnit : MonoBehaviour
 {
+    private const float ProductionCycleSeconds = 30f;
+
     [Header("依赖")]
     public ResourceManager resourceManager;
     public WorkforceManager workforceManager;
@@ -35,6 +37,9 @@ public class RoomProductionUnit : MonoBehaviour
 
     [Header("生命周期")]
     public bool builtAtStart = true;
+
+    [Header("调试")]
+    public bool enableDebugLogs = true;
 
     public RoomProductionState State { get; private set; } = RoomProductionState.PausedManual;
     public bool IsBuilt { get; private set; }
@@ -46,6 +51,8 @@ public class RoomProductionUnit : MonoBehaviour
     public event Action<RoomProductionUnit> OnWorkerAllocationFailed;
     public event Action<RoomProductionUnit> OnSettled;
     public event Action<RoomProductionUnit> OnSettleFailedByResource; //因资源不够而停摆
+
+    private bool _hasStarted;
 
     void Awake()
     {
@@ -71,19 +78,32 @@ public class RoomProductionUnit : MonoBehaviour
     void OnEnable()
     {
         RoomProductionScheduler scheduler = RoomProductionScheduler.Instance;
+        if (scheduler == null)
+        {
+            scheduler = FindObjectOfType<RoomProductionScheduler>();
+        }
+
+        if (scheduler == null)
+        {
+            GameObject schedulerObject = new GameObject("RoomProductionScheduler_Auto");
+            scheduler = schedulerObject.AddComponent<RoomProductionScheduler>();
+        }
+
         if (scheduler != null)
         {
             scheduler.Register(this);
         }
 
-        if (builtAtStart && !IsBuilt)
+        if (_hasStarted)
         {
-            bool ok = TryCompleteConstructionAndStart();
-            if (!ok)
-            {
-                Debug.Log($"{name} 自动建造失败: 资源不足，进入停摆状态，等待后续手动重试。");
-            }
+            TryAutoStartIfNeeded();
         }
+    }
+
+    void Start()
+    {
+        _hasStarted = true;
+        TryAutoStartIfNeeded();
     }
 
     void OnDisable()
@@ -103,6 +123,11 @@ public class RoomProductionUnit : MonoBehaviour
         TryCompleteConstructionAndStart();
     }
 
+    public void ApplyPlan(RoomProductionPlan newPlan)
+    {
+        plan = ClonePlan(newPlan);
+    }
+
     // 尝试完成建造并启动运行：
     // 1) 未建造时会先校验并扣除建造成本
     // 2) 已建造则直接进入运行
@@ -118,6 +143,7 @@ public class RoomProductionUnit : MonoBehaviour
         {
             if (!resourceManager.CanAfford(plan.constructionCosts))
             {
+                LogDebug("初始建设失败: 资源不足, costs=" + FormatResourceList(plan.constructionCosts));
                 ChangeState(RoomProductionState.PausedNoResource);
                 OnConstructionFailedByResource?.Invoke(this);
                 return false;
@@ -125,6 +151,7 @@ public class RoomProductionUnit : MonoBehaviour
 
             resourceManager.TrySpend(plan.constructionCosts);
             IsBuilt = true;
+            LogDebug("初始建设完成并扣费: costs=" + FormatResourceList(plan.constructionCosts));
             OnConstructionCompleted?.Invoke(this);
         }
 
@@ -176,7 +203,7 @@ public class RoomProductionUnit : MonoBehaviour
         if (!IsBuilt) return;
         if (State != RoomProductionState.Running) return;
 
-        float cycle = Mathf.Max(0.1f, plan.cycleSeconds);
+        float cycle = ProductionCycleSeconds;
         NextSettleTime = now + cycle;
     }
 
@@ -190,13 +217,15 @@ public class RoomProductionUnit : MonoBehaviour
 
         if (!TryAcquireWorkers())
         {
+            LogDebug("启动失败: 员工不足, requiredSquirrels=" + Mathf.Max(0, plan.requiredSquirrels));
             ChangeState(RoomProductionState.PausedNoResource);
             OnWorkerAllocationFailed?.Invoke(this);
             return;
         }
 
-        float cycle = Mathf.Max(0.1f, plan.cycleSeconds);
+        float cycle = ProductionCycleSeconds;
         NextSettleTime = Time.timeAsDouble + cycle;
+        LogDebug("开始运行: settleIn=" + cycle.ToString("0.0") + "s");
         ChangeState(RoomProductionState.Running);
     }
 
@@ -211,6 +240,7 @@ public class RoomProductionUnit : MonoBehaviour
 
         if (!resourceManager.CanAfford(plan.cycleCosts))
         {
+            LogDebug("周期结算失败: 资源不足, costs=" + FormatResourceList(plan.cycleCosts));
             ChangeState(RoomProductionState.PausedNoResource);
             ReleaseWorkers();
             OnSettleFailedByResource?.Invoke(this);
@@ -220,7 +250,9 @@ public class RoomProductionUnit : MonoBehaviour
         resourceManager.TrySpend(plan.cycleCosts);
         resourceManager.Add(plan.cycleOutputs);
 
-        float cycle = Mathf.Max(0.1f, plan.cycleSeconds);
+        LogDebug("周期结算成功: -" + FormatResourceList(plan.cycleCosts) + ", +" + FormatResourceList(plan.cycleOutputs));
+
+        float cycle = ProductionCycleSeconds;
         NextSettleTime = now + cycle;
 
         OnSettled?.Invoke(this);
@@ -236,6 +268,7 @@ public class RoomProductionUnit : MonoBehaviour
         }
 
         State = next;
+        LogDebug("状态切换 => " + State);
         OnStateChanged?.Invoke(this, State);
     }
 
@@ -257,5 +290,77 @@ public class RoomProductionUnit : MonoBehaviour
     {
         if (workforceManager == null) return;
         workforceManager.Release(this);
+    }
+
+    private void TryAutoStartIfNeeded()
+    {
+        if (!builtAtStart || IsBuilt)
+        {
+            return;
+        }
+
+        bool ok = TryCompleteConstructionAndStart();
+        if (!ok)
+        {
+            Debug.Log($"{name} 自动建造失败: 资源不足，进入停摆状态，等待后续手动重试。");
+        }
+    }
+
+    private static RoomProductionPlan ClonePlan(RoomProductionPlan source)
+    {
+        RoomProductionPlan src = source ?? new RoomProductionPlan();
+
+        return new RoomProductionPlan
+        {
+            roomId = src.roomId,
+            constructionCosts = CloneResourceList(src.constructionCosts),
+            requiredSquirrels = Mathf.Max(0, src.requiredSquirrels),
+            cycleSeconds = Mathf.Max(0.1f, src.cycleSeconds),
+            cycleCosts = CloneResourceList(src.cycleCosts),
+            cycleOutputs = CloneResourceList(src.cycleOutputs),
+        };
+    }
+
+    private static List<ResourceAmount> CloneResourceList(List<ResourceAmount> source)
+    {
+        if (source == null)
+        {
+            return new List<ResourceAmount>();
+        }
+
+        List<ResourceAmount> result = new List<ResourceAmount>(source.Count);
+        for (int i = 0; i < source.Count; i++)
+        {
+            result.Add(source[i]);
+        }
+
+        return result;
+    }
+
+    private void LogDebug(string message)
+    {
+        if (!enableDebugLogs)
+        {
+            return;
+        }
+
+        Debug.Log("[RoomProductionUnit] " + name + " | " + message, this);
+    }
+
+    private static string FormatResourceList(List<ResourceAmount> values)
+    {
+        if (values == null || values.Count == 0)
+        {
+            return "none";
+        }
+
+        List<string> parts = new List<string>(values.Count);
+        for (int i = 0; i < values.Count; i++)
+        {
+            ResourceAmount value = values[i];
+            parts.Add(value.type + ":" + value.amount);
+        }
+
+        return string.Join(", ", parts);
     }
 }

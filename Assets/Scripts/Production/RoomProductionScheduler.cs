@@ -5,6 +5,8 @@ using System;
 // 统一生产调度器：按固定时间片轮询所有运行中的房间，避免每个房间自己Update。
 public class RoomProductionScheduler : MonoBehaviour
 {
+    private const float FixedTickInterval = 0.2f;
+
     public static RoomProductionScheduler Instance { get; private set; }
 
     [Header("调度间隔(秒)")]
@@ -34,6 +36,7 @@ public class RoomProductionScheduler : MonoBehaviour
         }
 
         Instance = this;
+        tickInterval = FixedTickInterval;
     }
 
     void Update()

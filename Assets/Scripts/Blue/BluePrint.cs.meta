@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Scripts/Controllers/ResourceManager.cs.meta
+guid: 02fd489d6afe5bf49996cd0eb0ffc3f0
+========
+guid: cb2f863881398f34587efc9aaa276e88
+>>>>>>>> 2816d06 (building):Assets/Scripts/Blue/BluePrint.cs.meta
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

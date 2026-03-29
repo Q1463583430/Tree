@@ -12,9 +12,20 @@ public class GridCell
 }
 
 [System.Serializable]
+public enum RoomCategory
+{
+    Production,
+    Conversion,
+    Growth,
+    Other
+}
+
+[System.Serializable]
 public class PlaceableRoom
 {
     public string roomName; //每个房间的名称
+    public RoomCategory category = RoomCategory.Other;
+    [TextArea(2, 6)] public string description;
     public List<Vector2Int> occupiedCells; //房间占用的格子的相对坐标
     public GameObject roomPrefab; //房间的预制体
 }
@@ -32,6 +43,9 @@ public class GridManager : MonoBehaviour
 {
     public float gridSize = 1f;
     public float placementZ = 0f;
+    [Header("网格世界偏移(按格子单位)")]
+    public float worldXOffsetInCells = 0f;
+    public float worldYOffsetInCells = 0f;
 
     [Header("按照解锁顺序配置各个阶段的格子集合")]
     public List<GridStage> stages = new List<GridStage>();
@@ -43,9 +57,24 @@ public class GridManager : MonoBehaviour
 
     //字典用来存储地图的网格位置信息
     private Dictionary<Vector2Int, GridCell> grid = new Dictionary<Vector2Int, GridCell>();
+    private bool hasGridBounds;
+    private int minGridX;
+    private int maxGridX;
+    private int minGridY;
+    private int maxGridY;
+    private bool hasBuildSignature;
+    private float lastBuiltGridSize;
+    private float lastBuiltXOffsetInCells;
+    private float lastBuiltYOffsetInCells;
 
     // 初始化网格系统
     void Awake()
+    {
+        InitializeAllGrids();
+    }
+
+    // 运行时若模板生成器更新了 stages，可调用此方法重建网格字典。
+    public void RebuildGridFromStages()
     {
         InitializeAllGrids();
     }
@@ -57,12 +86,18 @@ public class GridManager : MonoBehaviour
         {
             gridSize = 1f;
         }
+
+        if (stages != null)
+        {
+            InitializeAllGrids();
+        }
     }
 
     private void InitializeAllGrids() //这个函数只用来初始化第0阶段的格子（初始格子）
     {
         grid.Clear();
         currentStageIndex = 0;
+        hasGridBounds = false;
 
         //如果当前没有定义阶段就不初始化
         if (stages == null || stages.Count == 0) return;
@@ -79,6 +114,7 @@ public class GridManager : MonoBehaviour
                 if (cellVisual == null) continue; // 防空检查
 
                 Vector2Int gridPos = WorldToGridPosition(cellVisual.transform.position);
+                ExpandGridBounds(gridPos);
 
                 if (!grid.ContainsKey(gridPos)) //containsKey判断grid字典是否包含gridPos位置
                 {
@@ -95,6 +131,11 @@ public class GridManager : MonoBehaviour
                 cellVisual.SetActive(unlockInitially);
             }
         }
+
+        hasBuildSignature = true;
+        lastBuiltGridSize = gridSize;
+        lastBuiltXOffsetInCells = worldXOffsetInCells;
+        lastBuiltYOffsetInCells = worldYOffsetInCells;
     }
 
     // 解锁下一阶段的新格子（可视化这些新格子）
@@ -131,38 +172,100 @@ public class GridManager : MonoBehaviour
     // 将世界坐标转换为网格坐标（XY平面）。
     public Vector2Int WorldToGridPosition(Vector3 worldPosition)
     {
-        int x = Mathf.RoundToInt(worldPosition.x / gridSize);
-        int y = Mathf.RoundToInt(worldPosition.y / gridSize);
+        worldPosition.x -= GetWorldXOffset();
+        worldPosition.y -= GetWorldYOffset();
+
+        int x = RoundHalfUp(worldPosition.x / gridSize);
+        int y = RoundHalfUp(worldPosition.y / gridSize);
         return new Vector2Int(x, y);
     }
 
     // 将网格坐标转换为世界坐标（XY平面，Z为固定深度 placementZ）。
     public Vector3 GridToWorldPosition(Vector2Int gridPosition)
     {
-        return new Vector3(gridPosition.x * gridSize, gridPosition.y * gridSize, placementZ);
+        float xOffset = GetWorldXOffset();
+        float yOffset = GetWorldYOffset();
+
+        return new Vector3(gridPosition.x * gridSize + xOffset, gridPosition.y * gridSize + yOffset, placementZ);
+    }
+
+    private float GetWorldXOffset()
+    {
+        return worldXOffsetInCells * gridSize;
+    }
+
+    private float GetWorldYOffset()
+    {
+        return worldYOffsetInCells * gridSize;
+    }
+
+    private static int RoundHalfUp(float value)
+    {
+        // 统一使用 floor(v + 0.5) 处理正负半格，保证整数格映射连续。
+        return Mathf.FloorToInt(value + 0.5f);
     }
 
     //判断grid的这个位置是否有格子
     public bool HasCell(Vector2Int pos)
     {
+        EnsureGridReadyFromStages();
         return grid.ContainsKey(pos);
+    }
+
+    public bool HasAnyRegisteredCells()
+    {
+        EnsureGridReadyFromStages();
+        return grid.Count > 0;
     }
 
     //尝试获取到pos位置的cell
     public bool TryGetCell(Vector2Int pos, out GridCell cell)
     {
+        EnsureGridReadyFromStages();
         return grid.TryGetValue(pos, out cell);
+    }
+
+    // 判断是否在网格外边界内(不代表可放置)。
+    public bool IsInsideGridBounds(Vector2Int pos)
+    {
+        EnsureGridReadyFromStages();
+
+        if (!hasGridBounds)
+        {
+            return false;
+        }
+
+        return pos.x >= minGridX && pos.x <= maxGridX && pos.y >= minGridY && pos.y <= maxGridY;
+    }
+
+    public bool TryGetGridBounds(out Vector2Int min, out Vector2Int max)
+    {
+        EnsureGridReadyFromStages();
+
+        min = Vector2Int.zero;
+        max = Vector2Int.zero;
+        if (!hasGridBounds)
+        {
+            return false;
+        }
+
+        min = new Vector2Int(minGridX, minGridY);
+        max = new Vector2Int(maxGridX, maxGridY);
+        return true;
     }
 
     //判断能不能占用该cell
     public bool CanOccupyCell(Vector2Int pos)
     {
+        EnsureGridReadyFromStages();
         return grid.TryGetValue(pos, out GridCell cell) && cell.isUnlocked && !cell.isOccupied;
     }
 
     //将某个cell设置为被占用
     public void SetCellOccupied(Vector2Int pos, bool occupied, PlaceableRoom room)
     {
+        EnsureGridReadyFromStages();
+
         if (!grid.TryGetValue(pos, out GridCell cell)) return;
 
         cell.isOccupied = occupied;
@@ -200,12 +303,88 @@ public class GridManager : MonoBehaviour
     //判断某个位置的cell是否已经解锁了
     public bool IsUnlockedCell(Vector2Int pos)
     {
+        EnsureGridReadyFromStages();
         return grid.TryGetValue(pos, out GridCell cell) && cell.isUnlocked;
     }
 
     //判断是否被占用
     public bool IsOccupiedCell(Vector2Int pos)
     {
+        EnsureGridReadyFromStages();
         return grid.TryGetValue(pos, out GridCell cell) && cell.isOccupied;
+    }
+
+    private void EnsureGridReadyFromStages()
+    {
+        if (grid.Count > 0 && !IsBuildSignatureDirty())
+        {
+            return;
+        }
+
+        if (stages == null || stages.Count == 0)
+        {
+            return;
+        }
+
+        bool hasAnyCell = false;
+        for (int i = 0; i < stages.Count; i++)
+        {
+            GridStage stage = stages[i];
+            if (stage == null || stage.cellObjects == null)
+            {
+                continue;
+            }
+
+            for (int j = 0; j < stage.cellObjects.Count; j++)
+            {
+                if (stage.cellObjects[j] != null)
+                {
+                    hasAnyCell = true;
+                    break;
+                }
+            }
+
+            if (hasAnyCell)
+            {
+                break;
+            }
+        }
+
+        if (!hasAnyCell)
+        {
+            return;
+        }
+
+        InitializeAllGrids();
+    }
+
+    private bool IsBuildSignatureDirty()
+    {
+        if (!hasBuildSignature)
+        {
+            return true;
+        }
+
+        return !Mathf.Approximately(lastBuiltGridSize, gridSize)
+            || !Mathf.Approximately(lastBuiltXOffsetInCells, worldXOffsetInCells)
+            || !Mathf.Approximately(lastBuiltYOffsetInCells, worldYOffsetInCells);
+    }
+
+    private void ExpandGridBounds(Vector2Int pos)
+    {
+        if (!hasGridBounds)
+        {
+            minGridX = pos.x;
+            maxGridX = pos.x;
+            minGridY = pos.y;
+            maxGridY = pos.y;
+            hasGridBounds = true;
+            return;
+        }
+
+        if (pos.x < minGridX) minGridX = pos.x;
+        if (pos.x > maxGridX) maxGridX = pos.x;
+        if (pos.y < minGridY) minGridY = pos.y;
+        if (pos.y > maxGridY) maxGridY = pos.y;
     }
 }
