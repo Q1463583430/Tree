@@ -189,6 +189,12 @@ public class GridTemplateGenerator : MonoBehaviour
             }
         }
 
+        if (gridManager != null && autoRegisterToStages)
+        {
+            // 生成后统一重建一次网格，避免读取到旧字典与旧边界。
+            gridManager.RebuildGridFromStages();
+        }
+
         Debug.Log($"阶段生成完成: 0 -> {generateToStageIndex}, 总计 {totalCreated} 个格子, 重叠跳过 {totalSkippedOverlap} 个, 父节点: {container.name}");
     }
 
