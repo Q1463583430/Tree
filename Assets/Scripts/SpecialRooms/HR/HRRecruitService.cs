@@ -178,7 +178,7 @@ public static class HRRecruitService
                 e.walnutCollectibleBonus += 0.05f;
                 break;
             case HREmployeeTraitType.EliteHR:
-                e.eliteHrBonusChance += 0.1f;
+                e.intelligence += 5;
                 break;
             case HREmployeeTraitType.BirdStomach:
                 e.dailyFruitConsumptionDelta -= 3;

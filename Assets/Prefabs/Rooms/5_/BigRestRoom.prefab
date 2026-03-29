@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3041220980623433908}
   - component: {fileID: 329418632483017873}
   - component: {fileID: 3820024282367014412}
+  - component: {fileID: 6120749670168597620}
   m_Layer: 0
   m_Name: BigRestRoom
   m_TagString: Untagged
@@ -132,3 +133,17 @@ MonoBehaviour:
     cycleOutputs: []
   builtAtStart: 1
   enableDebugLogs: 1
+--- !u!114 &6120749670168597620
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6743435660356700511}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6640e63de56f4da4382e6d71f6516d2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  capacityBonus: 9
+  repository: {fileID: 0}
