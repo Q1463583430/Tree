@@ -63,13 +63,13 @@ public static class HRRecruitService
             return 3;
         }
 
-        int r = UnityEngine.Random.Range(1, totalWeight + 1);
+        int r = UnityEngine.Random.Range(0, totalWeight);
         int cumulative = 0;
 
         for (int i = 0; i < BaseStatWeights.Length; i++)
         {
             cumulative += BaseStatWeights[i];
-            if (r <= cumulative)
+            if (r < cumulative)
             {
                 return BaseStatValues[i];
             }

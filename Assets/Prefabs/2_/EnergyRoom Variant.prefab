@@ -68,6 +68,10 @@ PrefabInstance:
       propertyPath: plan.constructionCosts.Array.data[0].amount
       value: 150
       objectReference: {fileID: 0}
+    - target: {fileID: 5639332202567309987, guid: 43bcf25d14a059449adbaa1297a691e7, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 65e495719fb7f344681944c3486526a9, type: 2}
     - target: {fileID: 7432817998843726326, guid: 43bcf25d14a059449adbaa1297a691e7, type: 3}
       propertyPath: m_Name
       value: EnergyRoom Variant

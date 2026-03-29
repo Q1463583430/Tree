@@ -21,10 +21,11 @@ public class HRRecruitPanel : MonoBehaviour
     public GameObject resultRoot;
 
     [Header("按钮")]
-    public Button closeButton;
-    public Button recruitButton;
-    public Button rerollButton;
-    public Button openWarehouseButton;
+    public Button closeButton;           // 主关闭按钮（通常在右上角）
+    public Button closeButtonSecondary;  // 副关闭按钮（通常在招募按钮旁边）
+    public Button recruitButton;         // 招募新员工（加入仓库）
+    public Button rerollButton;          // 重新招募（替换上一次招募的员工）
+    public Button openWarehouseButton;   // 打开员工仓库
 
     [Header("结果图片")]
     public Image resultImage;
@@ -59,6 +60,7 @@ public class HRRecruitPanel : MonoBehaviour
     void Awake()
     {
         if (closeButton != null) closeButton.onClick.AddListener(ClosePanel);
+        if (closeButtonSecondary != null) closeButtonSecondary.onClick.AddListener(ClosePanel);
         if (recruitButton != null) recruitButton.onClick.AddListener(OnRecruitClicked);
         if (rerollButton != null) rerollButton.onClick.AddListener(OnRerollClicked);
         if (openWarehouseButton != null) openWarehouseButton.onClick.AddListener(OpenWarehouse);
@@ -378,13 +380,21 @@ public class HRRecruitPanel : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 应用招募按钮状态：
+    /// - 首次打开：只显示 recruitButton（招募新员工）
+    /// - 已招募过：同时显示 recruitButton 和 rerollButton（可选替换上一次）
+    /// - rerollButton 仅在已招募过时可用
+    /// </summary>
     private void ApplyRecruitButtonState(bool showReroll)
     {
+        // recruitButton 始终可用（首次招募或继续招募新员工）
         if (recruitButton != null)
         {
-            recruitButton.gameObject.SetActive(!showReroll);
+            recruitButton.gameObject.SetActive(true);
         }
 
+        // rerollButton 仅在已招募过时显示
         if (rerollButton != null)
         {
             rerollButton.gameObject.SetActive(showReroll);

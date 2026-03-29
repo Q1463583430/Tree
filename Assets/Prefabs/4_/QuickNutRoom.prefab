@@ -63,7 +63,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a5a638945e0853e4f9ab90a795a6df33, type: 2}
+  - {fileID: 2100000, guid: 6d5408ee20ddb5449a7a16dcdb555cd5, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -119,6 +119,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b300aa5cd101bd428398ea4edecd06f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ProductionCycleSeconds: 30
   resourceManager: {fileID: 0}
   workforceManager: {fileID: 0}
   plan:
@@ -127,6 +128,9 @@ MonoBehaviour:
     - type: 0
       amount: 500
     requiredSquirrels: 2
+    workType: 0
+    requiredEmployeeIds: []
+    traitRules: []
     cycleSeconds: 30
     cycleCosts:
     - type: 2
