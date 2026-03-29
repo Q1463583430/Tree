@@ -53,6 +53,7 @@ public class GridManager : MonoBehaviour
     [Header("调试显示")]
     public bool drawGridGizmos = true;
 
+
     private int currentStageIndex = 0;
 
     //字典用来存储地图的网格位置信息
@@ -76,7 +77,7 @@ public class GridManager : MonoBehaviour
     // 运行时若模板生成器更新了 stages，可调用此方法重建网格字典。
     public void RebuildGridFromStages()
     {
-        InitializeAllGrids();
+        //InitializeAllGrids();
     }
 
     //这个函数用于判断grid大小是否合规（感觉没什么用）
@@ -96,7 +97,7 @@ public class GridManager : MonoBehaviour
     private void InitializeAllGrids() //这个函数只用来初始化第0阶段的格子（初始格子）
     {
         grid.Clear();
-        currentStageIndex = 0;
+        
         hasGridBounds = false;
 
         //如果当前没有定义阶段就不初始化

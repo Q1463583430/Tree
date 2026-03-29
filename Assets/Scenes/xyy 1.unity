@@ -181,8 +181,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
+  m_sharedMaterial: {fileID: 729723505934696190, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -669,8 +669,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
+  m_sharedMaterial: {fileID: 729723505934696190, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1079,8 +1079,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
+  m_sharedMaterial: {fileID: 729723505934696190, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1163,6 +1163,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 286482683}
+  - component: {fileID: 286482684}
   m_Layer: 0
   m_Name: managers
   m_TagString: Untagged
@@ -1193,6 +1194,102 @@ Transform:
   - {fileID: 347246795}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &286482684
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 286482682}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: be48ed5f3503659469df9a1c0a3b7721, type: 3}
+  m_PlayOnAwake: 1
+  m_Volume: 0.439
+  m_Pitch: 1
+  Loop: 1
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &287720011
 GameObject:
   m_ObjectHideFlags: 0
@@ -4099,8 +4196,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
+  m_sharedMaterial: {fileID: 729723505934696190, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5122,8 +5219,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
+  m_sharedMaterial: {fileID: 729723505934696190, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5291,8 +5388,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
+  m_sharedMaterial: {fileID: 729723505934696190, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5425,8 +5522,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
+  m_sharedMaterial: {fileID: 729723505934696190, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5453,7 +5550,7 @@ MonoBehaviour:
   m_fontSize: 40
   m_fontSizeBase: 40
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
@@ -5874,8 +5971,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
+  m_sharedMaterial: {fileID: 729723505934696190, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -6291,8 +6388,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
+  m_sharedMaterial: {fileID: 729723505934696190, guid: 594b5f788b030ea4bbe543b87e3155e1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -6531,6 +6628,10 @@ MonoBehaviour:
       000011111110000
 
       000001111100000'
+    visualPrefabOverride: {fileID: 0}
+    colorOverride: {r: 1, g: 1, b: 1, a: 1}
+    useColorOverride: 1
+    stageMaterial: {fileID: 2100000, guid: 5b0111e31c028d740b0d07a5d0e74983, type: 2}
   - stageIndex: 1
     template: '000000000000000
 
@@ -6538,7 +6639,7 @@ MonoBehaviour:
 
       000111111111000
 
-      001111000011100
+      001110000011100
 
       001100000001100
 
@@ -6547,6 +6648,10 @@ MonoBehaviour:
       000100000001000
 
       000000000000000'
+    visualPrefabOverride: {fileID: 0}
+    colorOverride: {r: 1, g: 1, b: 1, a: 1}
+    useColorOverride: 0
+    stageMaterial: {fileID: 2100000, guid: 2235df433b9ee9641b4d699367e6e0d5, type: 2}
   - stageIndex: 2
     template: '000000000000000
 
@@ -6563,6 +6668,10 @@ MonoBehaviour:
       001000000000100
 
       000010000010000'
+    visualPrefabOverride: {fileID: 0}
+    colorOverride: {r: 1, g: 1, b: 1, a: 1}
+    useColorOverride: 0
+    stageMaterial: {fileID: 2100000, guid: ce8ef85910a7fd44aa81a772c54a7512, type: 2}
   - stageIndex: 3
     template: '000011111111000
 
@@ -6579,6 +6688,10 @@ MonoBehaviour:
       010000000000010
 
       001100000001100'
+    visualPrefabOverride: {fileID: 0}
+    colorOverride: {r: 1, g: 1, b: 1, a: 1}
+    useColorOverride: 0
+    stageMaterial: {fileID: 2100000, guid: 749db97e72107b741bc7bf84ec37cfbf, type: 2}
   - stageIndex: 4
     template: '001100000001100
 
@@ -6595,10 +6708,17 @@ MonoBehaviour:
       100000000000001
 
       010000000000010'
+    visualPrefabOverride: {fileID: 0}
+    colorOverride: {r: 1, g: 1, b: 1, a: 1}
+    useColorOverride: 0
+    stageMaterial: {fileID: 2100000, guid: 1aab23ff4207f1a469d2c3fba9f6ef2e, type: 2}
   gridManager: {fileID: 347246794}
   autoRegisterToStages: 1
   clearStageCellListBeforeRegister: 1
   alignByLargestTemplate: 1
+  stageMeshRenderer: {fileID: 1537631772}
+  currentStageIndex: 0
+  enableUKeyStageSwitch: 1
 --- !u!1 &1826598878
 GameObject:
   m_ObjectHideFlags: 0

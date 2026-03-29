@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine.UI;
 using UnityEngine;
 
 [System.Serializable]
@@ -10,6 +11,18 @@ public class StageTemplateConfig
     [Header("阶段模板 (1或#=生成, 0=空)")]
     [TextArea(4, 20)]
     public string template;
+
+    [Header("视觉覆盖（可选，为空时使用 visualPrefab）")]
+    public GameObject visualPrefabOverride;
+
+    [Header("颜色覆盖（可选，修改 Image 或 SpriteRenderer）")]
+    public Color colorOverride = Color.white;
+
+    [Header("是否启用颜色覆盖")]
+    public bool useColorOverride = false;
+
+    [Header("阶段材质（用于按U键切换时应用到 MeshRenderer）")]
+    public Material stageMaterial;
 }
 
 public class GridTemplateGenerator : MonoBehaviour
@@ -118,6 +131,11 @@ public class GridTemplateGenerator : MonoBehaviour
     [Header("位置对齐")]
     public bool alignByLargestTemplate = true;
 
+    [Header("阶段切换（按U键进入下一阶段）")]
+    public MeshRenderer stageMeshRenderer;
+    public int currentStageIndex = 0;
+    public bool enableUKeyStageSwitch = true;
+
     private const string GeneratedNamePrefix = "Cell_";
 
     // 启动时自动生成到选中阶段。
@@ -125,6 +143,166 @@ public class GridTemplateGenerator : MonoBehaviour
     {
         if (!autoGenerateOnStart) return;
         GenerateToSelectedStageIndex();
+    }
+
+    // 检测U键切换阶段
+    void Update()
+    {
+        if (!enableUKeyStageSwitch) return;
+
+        if (Input.GetKeyDown(KeyCode.U))
+        {
+            AdvanceToNextStage();
+        }
+    }
+
+    // 进入下一个阶段
+    [ContextMenu("Advance To Next Stage")]
+    public void AdvanceToNextStage()
+    {
+        int nextStage = currentStageIndex + 1;
+
+        // 查找是否有下一阶段的配置
+        StageTemplateConfig nextConfig = FindStageConfig(nextStage);
+        if (nextConfig == null)
+        {
+            if (verboseLog)
+            {
+                Debug.Log($"已到达最后阶段 (当前: {currentStageIndex})");
+            }
+            return;
+        }
+
+        currentStageIndex = nextStage;
+        generateToStageIndex = nextStage;
+
+        // 应用阶段材质
+        ApplyStageMaterial(nextConfig);
+
+        // 只生成当前新阶段的格子（不清除已有格子）
+        GenerateSingleStage(nextConfig);
+
+        if (verboseLog)
+        {
+            Debug.Log($"进入阶段 {currentStageIndex}");
+        }
+    }
+
+    // 只生成单个阶段的新格子（不清除已有格子，用于阶段切换）
+    private void GenerateSingleStage(StageTemplateConfig config)
+    {
+        if (config == null) return;
+        if (!ValidateGenerationSettings()) return;
+
+        if (verboseLog)
+        {
+            Debug.Log($"生成阶段 {config.stageIndex} 的新格子");
+        }
+
+        // 收集已存在的格子位置（用于避免重复生成）
+        HashSet<Vector2Int> existingCells = GetExistingCellPositions();
+
+        int created = 0;
+        int skipped = 0;
+
+        GetReferenceSize(new List<StageTemplateConfig> { config }, out int referenceWidth, out int referenceHeight);
+
+        created = GenerateTemplateCells(
+            config.template,
+            config.stageIndex,
+            referenceWidth,
+            referenceHeight,
+            existingCells,  // 使用已存在格子作为排除集合
+            out int overlapSkipped,
+            out List<GameObject> createdCells,
+            config
+        );
+
+        skipped = overlapSkipped;
+
+        RegisterToStageIfNeeded(config.stageIndex, createdCells);
+
+        if (gridManager != null && autoRegisterToStages)
+        {
+            gridManager.RebuildGridFromStages();
+            // 解锁新阶段的格子（显示出来）
+            gridManager.UnlockNextStage();
+        }
+
+        if (verboseLog)
+        {
+            Debug.Log($"阶段 {config.stageIndex} 生成完成: 新增 {created} 个, 跳过重叠 {skipped} 个");
+        }
+    }
+
+    // 获取当前已存在的所有格子位置
+    private HashSet<Vector2Int> GetExistingCellPositions()
+    {
+        HashSet<Vector2Int> existingCells = new HashSet<Vector2Int>();
+
+        if (container == null) return existingCells;
+
+        foreach (Transform child in container)
+        {
+            if (child.name.StartsWith(GeneratedNamePrefix))
+            {
+                // 将世界位置转换为虚拟格子坐标
+                Vector2Int gridPos = WorldPositionToVirtualCell(child.position);
+                existingCells.Add(gridPos);
+            }
+        }
+
+        return existingCells;
+    }
+
+    // 将世界位置转换为虚拟格子坐标
+    private Vector2Int WorldPositionToVirtualCell(Vector3 worldPos)
+    {
+        Vector3 localPos = worldPos - origin;
+
+        int targetWidth = FixedTemplateWidth;
+        int targetHeight = FixedTemplateHeight;
+
+        Vector2 centerOffset = Vector2.zero;
+        if (centerTemplate)
+        {
+            centerOffset = new Vector2((targetWidth - 1) * 0.5f, (targetHeight - 1) * 0.5f);
+        }
+
+        int virtualCol = Mathf.RoundToInt((localPos.x / cellSize) + centerOffset.x);
+        int virtualRow = Mathf.RoundToInt((targetHeight - 1) - (localPos.y / cellSize) + centerOffset.y);
+
+        return new Vector2Int(virtualCol, virtualRow);
+    }
+
+    // 查找指定阶段的配置
+    private StageTemplateConfig FindStageConfig(int stageIndex)
+    {
+        if (stageTemplates == null) return null;
+
+        for (int i = 0; i < stageTemplates.Count; i++)
+        {
+            StageTemplateConfig config = stageTemplates[i];
+            if (config != null && config.stageIndex == stageIndex)
+            {
+                return config;
+            }
+        }
+        return null;
+    }
+
+    // 应用阶段材质到 MeshRenderer
+    private void ApplyStageMaterial(StageTemplateConfig config)
+    {
+        if (stageMeshRenderer == null) return;
+        if (config == null || config.stageMaterial == null) return;
+
+        stageMeshRenderer.material = config.stageMaterial;
+
+        if (verboseLog)
+        {
+            Debug.Log($"已应用阶段 {config.stageIndex} 的材质: {config.stageMaterial.name}");
+        }
     }
 
     // 根据 generateToStageIndex 生成从第0阶段到目标阶段(包含)的格子。
@@ -176,7 +354,8 @@ public class GridTemplateGenerator : MonoBehaviour
                 referenceHeight,
                 usedCells,
                 out int overlapSkipped,
-                out List<GameObject> createdCells
+                out List<GameObject> createdCells,
+                config
             );
             totalCreated += created;
             totalSkippedOverlap += overlapSkipped;
@@ -296,7 +475,8 @@ public class GridTemplateGenerator : MonoBehaviour
         int referenceHeight,
         HashSet<Vector2Int> usedCells,
         out int overlapSkipped,
-        out List<GameObject> createdCells
+        out List<GameObject> createdCells,
+        StageTemplateConfig config = null
     )
     {
         createdCells = new List<GameObject>();
@@ -335,8 +515,10 @@ public class GridTemplateGenerator : MonoBehaviour
                 Vector2Int virtualCell = new Vector2Int(virtualCol, virtualRow);
                 if (usedCells != null)
                 {
+                    Debug.Log($"检查阶段 {stageIndexForName} 的格子 ({virtualCol}, {virtualRow}) 是否已存在...");
                     if (usedCells.Contains(virtualCell))
                     {
+                        Debug.Log($"阶段 {stageIndexForName} 的格子 ({virtualCol}, {virtualRow}) 已存在，跳过生成");
                         overlapSkipped++;
                         continue;
                     }
@@ -349,8 +531,21 @@ public class GridTemplateGenerator : MonoBehaviour
                 float localY = (virtualYIndex - centerOffset.y) * cellSize;
 
                 Vector3 worldPos = origin + new Vector3(localX, localY, zOffset);
-                GameObject cell = Instantiate(visualPrefab, worldPos, Quaternion.identity, container);
+
+                // 确定使用的预制体：优先使用阶段覆盖，否则使用默认预制体
+                GameObject prefabToUse = (config != null && config.visualPrefabOverride != null)
+                    ? config.visualPrefabOverride
+                    : visualPrefab;
+
+                GameObject cell = Instantiate(prefabToUse, worldPos, Quaternion.identity, container);
                 cell.name = $"{GeneratedNamePrefix}S{stageIndexForName}_{createdCount}";
+                //cell.SetActive(true);  // 确保生成的格子是激活状态
+
+                // 应用颜色覆盖
+                if (config != null && config.useColorOverride)
+                {
+                    ApplyColorToCell(cell, config.colorOverride);
+                }
 
                 createdCells.Add(cell);
                 createdCount++;
@@ -464,6 +659,43 @@ public class GridTemplateGenerator : MonoBehaviour
         for (int i = 0; i < createdCells.Count; i++)
         {
             stage.cellObjects.Add(createdCells[i]);
+        }
+    }
+
+    // 应用颜色到格子对象（支持 Image 和 SpriteRenderer）
+    private void ApplyColorToCell(GameObject cell, Color color)
+    {
+        if (cell == null) return;
+
+        // 优先修改 Image 组件（UI）
+        Image image = cell.GetComponent<Image>();
+        if (image != null)
+        {
+            image.color = color;
+            return;
+        }
+
+        // 其次修改 SpriteRenderer（3D/2D 对象）
+        SpriteRenderer spriteRenderer = cell.GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = color;
+            return;
+        }
+
+        // 最后尝试修改子对象的 Image
+        Image childImage = cell.GetComponentInChildren<Image>();
+        if (childImage != null)
+        {
+            childImage.color = color;
+            return;
+        }
+
+        // 尝试修改子对象的 SpriteRenderer
+        SpriteRenderer childSpriteRenderer = cell.GetComponentInChildren<SpriteRenderer>();
+        if (childSpriteRenderer != null)
+        {
+            childSpriteRenderer.color = color;
         }
     }
 }
