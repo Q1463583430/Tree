@@ -46,7 +46,7 @@ public class ResourceState
 
 public class ResourceManager : MonoBehaviour
 {
-    private const int InitialEnergyValue = 100;
+    public int InitialEnergyValue = 1000;
 
     //使用实例同一管理资源，仅可私有设置，可读
     public static ResourceManager Instance { get; private set; }
@@ -60,7 +60,7 @@ public class ResourceManager : MonoBehaviour
     [Header("初始资源配置")]
     public List<ResourceState> initialStates = new List<ResourceState>
     {
-        new ResourceState { type = ResourceType.Energy, current = 100, min = 100, max = 2000},
+        new ResourceState { type = ResourceType.Energy, current = 0, min = 100, max = 2000},
         new ResourceState { type = ResourceType.Root, current = 0, min = 0, max = 2000 },
         new ResourceState { type = ResourceType.Fruit, current = 0, min = 0, max = 2000 },
         new ResourceState { type = ResourceType.Squirrel, current = 0, min = 0, max = 2000 },
