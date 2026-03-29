@@ -251,8 +251,8 @@ public class ResourceManager : MonoBehaviour
                 {
                     type = ResourceType.Energy,
                     min = 0,
-                    max = Mathf.Max(InitialEnergyValue, src.max),
-                    current = InitialEnergyValue,
+                    max = Mathf.Max(initialEnergyValue, src.max),
+                    current = initialEnergyValue,
                 };
             }
             else
@@ -276,7 +276,7 @@ public class ResourceManager : MonoBehaviour
                 type = ResourceType.Energy,
                 min = 0,
                 max = 2000,
-                current = InitialEnergyValue,
+                current = initialEnergyValue,
             });
         }
 
@@ -297,7 +297,7 @@ public class ResourceManager : MonoBehaviour
                 type = ResourceType.Energy,
                 min = 0,
                 max = 2000,
-                current = InitialEnergyValue,
+                current = initialEnergyValue,
             };
 
             _states[ResourceType.Energy] = runtime;
@@ -312,8 +312,8 @@ public class ResourceManager : MonoBehaviour
 
         int before = energyState.current;
         energyState.min = Mathf.Min(energyState.min, 0);
-        energyState.max = Mathf.Max(energyState.max, InitialEnergyValue);
-        energyState.current = InitialEnergyValue;
+        energyState.max = Mathf.Max(energyState.max, initialEnergyValue);
+        energyState.current = initialEnergyValue;
         OnResourceChanged?.Invoke(ResourceType.Energy, before, energyState.current);
     }
 }

@@ -28,6 +28,13 @@ public class BluePrint : MonoBehaviour
     public TMP_Text roomDescriptionText;
     public BuildingRoomCatalog roomCatalog;
 
+    [Header("房间列表按钮范围")]
+    [Min(1f)] public float roomButtonMinWidth = 180f;
+    [Min(1f)] public float roomButtonMinHeight = 96f;
+    [Min(0f)] public float roomButtonExtraHitY = 18f;
+    [Min(1f)] public float pageNavButtonMinHeight = 64f;
+    [Min(0f)] public float pageNavButtonExtraHitY = 14f;
+
     [Header("房间数据接入")]
     public Roommanager roomDataManager;
     public bool autoApplyProductionData = true;
@@ -114,6 +121,9 @@ public class BluePrint : MonoBehaviour
         {
             nextPageButton.onClick.AddListener(NextPage);
         }
+
+        ConfigurePageNavButtonHitArea(prevPageButton);
+        ConfigurePageNavButtonHitArea(nextPageButton);
 
         if (magicBuildingPanel != null)
         {
@@ -253,6 +263,7 @@ public class BluePrint : MonoBehaviour
 
             RoomButtonItem item = Instantiate(roomButtonPrefab, roomButtonRoot);
             item.Init(room, this);
+            ConfigureRoomButtonHitArea(item);
             spawnedButtons.Add(item);
         }
 
@@ -458,6 +469,72 @@ public class BluePrint : MonoBehaviour
         horizontalLayout.childForceExpandHeight = false;
     }
 
+    private void ConfigureRoomButtonHitArea(RoomButtonItem item)
+    {
+        if (item == null)
+        {
+            return;
+        }
+
+        RectTransform itemRect = item.GetComponent<RectTransform>();
+        if (itemRect != null)
+        {
+            itemRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Mathf.Max(roomButtonMinWidth, itemRect.rect.width));
+            itemRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Max(roomButtonMinHeight, itemRect.rect.height));
+        }
+
+        LayoutElement layout = item.GetComponent<LayoutElement>();
+        if (layout == null)
+        {
+            layout = item.gameObject.AddComponent<LayoutElement>();
+        }
+
+        layout.minWidth = roomButtonMinWidth;
+        layout.preferredWidth = roomButtonMinWidth;
+        layout.minHeight = roomButtonMinHeight;
+        layout.preferredHeight = roomButtonMinHeight;
+
+        Button button = item.button != null ? item.button : item.GetComponent<Button>();
+        if (button == null)
+        {
+            return;
+        }
+
+        RectTransform buttonRect = button.GetComponent<RectTransform>();
+        if (buttonRect != null)
+        {
+            buttonRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Max(roomButtonMinHeight, buttonRect.rect.height));
+        }
+
+        Graphic graphic = button.targetGraphic;
+        if (graphic != null)
+        {
+            float y = Mathf.Max(0f, roomButtonExtraHitY);
+            graphic.raycastPadding = new Vector4(0f, y, 0f, y);
+        }
+    }
+
+    private void ConfigurePageNavButtonHitArea(Button button)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        RectTransform rect = button.GetComponent<RectTransform>();
+        if (rect != null)
+        {
+            rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Max(pageNavButtonMinHeight, rect.rect.height));
+        }
+
+        Graphic graphic = button.targetGraphic;
+        if (graphic != null)
+        {
+            float y = Mathf.Max(0f, pageNavButtonExtraHitY);
+            graphic.raycastPadding = new Vector4(0f, y, 0f, y);
+        }
+    }
+
     private void EnsureCanvasGroupReady()
     {
         if (magicBuildingPanel == null)
@@ -659,6 +736,8 @@ public class BluePrint : MonoBehaviour
 
         if (productionUnit != null)
         {
+            EnsureRoomEmployeeClickHandler(placedObject, productionUnit);
+
             if (autoApplyProductionData && !planBound && !hasInspectorPlan)
             {
                 for (int i = 0; i < placedRoom.occupiedCells.Count; i++)
@@ -676,6 +755,8 @@ public class BluePrint : MonoBehaviour
                 Debug.LogWarning($"{name} 房间[{selectedRoom.roomName}]未命中 Roommanager 配置，已回退使用 Prefab Inspector 中的生产计划。", this);
             }
 
+            NormalizeHrProductionPlanForManualRecruit(placedObject, productionUnit);
+
             bool started = productionUnit.TryCompleteConstructionAndStart();
             if (!started)
             {
@@ -685,9 +766,11 @@ public class BluePrint : MonoBehaviour
                 }
 
                 Destroy(placedObject);
-                previewInvalidReason = "资源不足，无法完成初始建设";
+                previewInvalidReason = GetPlacementFailureReason(productionUnit);
                 return false;
             }
+
+            ActivatePlacedHrGeneration(placedObject);
         }
         else
         {
@@ -980,6 +1063,109 @@ public class BluePrint : MonoBehaviour
         }
 
         return true;
+    }
+
+    private static void EnsureRoomEmployeeClickHandler(GameObject placedObject, RoomProductionUnit productionUnit)
+    {
+        if (placedObject == null || productionUnit == null)
+        {
+            return;
+        }
+
+        RoomEmployeeRoomClickHandler clickHandler = placedObject.GetComponent<RoomEmployeeRoomClickHandler>();
+        if (clickHandler == null)
+        {
+            clickHandler = placedObject.AddComponent<RoomEmployeeRoomClickHandler>();
+        }
+
+        clickHandler.roomUnit = productionUnit;
+    }
+
+    private static void ActivatePlacedHrGeneration(GameObject placedObject)
+    {
+        if (placedObject == null)
+        {
+            return;
+        }
+
+        HR[] hrs = placedObject.GetComponentsInChildren<HR>(true);
+        for (int i = 0; i < hrs.Length; i++)
+        {
+            HR hr = hrs[i];
+            if (hr != null)
+            {
+                hr.NotifyRoomPlacedAndReady();
+            }
+        }
+    }
+
+    private static void NormalizeHrProductionPlanForManualRecruit(GameObject placedObject, RoomProductionUnit productionUnit)
+    {
+        if (placedObject == null || productionUnit == null)
+        {
+            return;
+        }
+
+        HR hr = placedObject.GetComponentInChildren<HR>(true);
+        if (hr == null)
+        {
+            return;
+        }
+
+        // HR 当前版本走手动招募：房间放置后需先分配松鼠才能启动。
+        productionUnit.plan.requiredSquirrels = Mathf.Max(0, productionUnit.plan.requiredSquirrels);
+        productionUnit.plan.workType = RoomEmployeeWorkType.HR;
+
+        if (productionUnit.plan.cycleCosts == null)
+        {
+            productionUnit.plan.cycleCosts = new List<ResourceAmount>();
+        }
+        else
+        {
+            productionUnit.plan.cycleCosts.Clear();
+        }
+
+        if (productionUnit.plan.cycleOutputs == null)
+        {
+            productionUnit.plan.cycleOutputs = new List<ResourceAmount>();
+        }
+        else
+        {
+            productionUnit.plan.cycleOutputs.Clear();
+        }
+    }
+
+    private string GetPlacementFailureReason(RoomProductionUnit productionUnit)
+    {
+        if (productionUnit == null)
+        {
+            return "房间启动失败，请检查房间配置。";
+        }
+
+        if (!productionUnit.CanAffordConstruction())
+        {
+            return "资源不足，无法完成初始建设";
+        }
+
+        int required = Mathf.Max(0, productionUnit.plan.requiredSquirrels);
+        if (required > 0)
+        {
+            WorkforceManager workforce = productionUnit.workforceManager;
+            if (workforce == null)
+            {
+                workforce = WorkforceManager.Instance;
+            }
+
+            if (workforce == null)
+            {
+                workforce = FindObjectOfType<WorkforceManager>();
+            }
+
+            int available = workforce != null ? workforce.GetAvailableSquirrels() : 0;
+            return $"员工不足，无法启动房间（需要 {required}，可用 {available}）";
+        }
+
+        return "房间启动失败，请检查房间配置与依赖引用。";
     }
 
     private bool TrySpendConstructionCostWithoutProductionUnit(RoomDefinition room, out string reason)

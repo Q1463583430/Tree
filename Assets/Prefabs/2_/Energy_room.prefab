@@ -30,7 +30,11 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
+<<<<<<< HEAD:Assets/Prefabs/Rooms/2_/Energy_room.prefab
   m_LocalScale: {x: 2, y: 2, z: 1}
+=======
+  m_LocalScale: {x: 2, y: 1, z: 0.000000001}
+>>>>>>> 103459e7e61d889c9a2ca914189e233af53bb343:Assets/Prefabs/room_1_2.prefab
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -125,8 +129,16 @@ MonoBehaviour:
     roomId: 201
     constructionCosts:
     - type: 0
+<<<<<<< HEAD:Assets/Prefabs/Rooms/2_/Energy_room.prefab
       amount: 150
     requiredSquirrels: 1
+=======
+      amount: 50
+    requiredSquirrels: 0
+    workType: 0
+    requiredEmployeeIds: []
+    traitRules: []
+>>>>>>> 103459e7e61d889c9a2ca914189e233af53bb343:Assets/Prefabs/room_1_2.prefab
     cycleSeconds: 30
     cycleCosts: []
     cycleOutputs:
