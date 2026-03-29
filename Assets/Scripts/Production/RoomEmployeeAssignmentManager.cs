@@ -192,6 +192,7 @@ public class RoomEmployeeAssignmentManager : MonoBehaviour
         _roomByEmployeeId[id] = room;
 
         ApplyPendingBonus(room);
+        RefreshRoomRunState(room);
         OnRoomAssignmentsChanged?.Invoke(room);
         return true;
     }
@@ -223,6 +224,7 @@ public class RoomEmployeeAssignmentManager : MonoBehaviour
         }
 
         ApplyPendingBonus(room);
+        RefreshRoomRunState(room);
         OnRoomAssignmentsChanged?.Invoke(room);
         return true;
     }
@@ -247,6 +249,7 @@ public class RoomEmployeeAssignmentManager : MonoBehaviour
 
         _assignedIdsByRoom.Remove(room);
         room.SetPendingCycleBonusFromEmployees(new List<HREmployeeData>());
+        RefreshRoomRunState(room);
         OnRoomAssignmentsChanged?.Invoke(room);
     }
 
@@ -366,6 +369,29 @@ public class RoomEmployeeAssignmentManager : MonoBehaviour
 
         List<HREmployeeData> assigned = GetAssignedEmployees(room);
         room.SetPendingCycleBonusFromEmployees(assigned);
+    }
+
+    private void RefreshRoomRunState(RoomProductionUnit room)
+    {
+        if (room == null)
+        {
+            return;
+        }
+
+        int required = Mathf.Max(0, room.plan.requiredSquirrels);
+        if (required <= 0)
+        {
+            return;
+        }
+
+        int assigned = GetAssignedCount(room);
+        if (assigned >= required)
+        {
+            room.ResumeManual();
+            return;
+        }
+
+        room.PauseManual();
     }
 
     private bool EnsureRepository()

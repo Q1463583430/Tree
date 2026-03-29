@@ -263,6 +263,22 @@ public class RoomProductionUnit : MonoBehaviour
             return;
         }
 
+        if (!HasRequiredAssignments())
+        {
+            int required = Mathf.Max(0, plan.requiredSquirrels);
+            int assigned = 0;
+            RoomEmployeeAssignmentManager manager = RoomEmployeeAssignmentManager.Instance;
+            if (manager != null)
+            {
+                assigned = manager.GetAssignedCount(this);
+            }
+
+            LogDebug("启动等待: 未完成松鼠分配, required=" + required + ", assigned=" + assigned);
+            ChangeState(RoomProductionState.PausedManual);
+            OnWorkerAllocationFailed?.Invoke(this);
+            return;
+        }
+
         if (!TryAcquireWorkers())
         {
             LogDebug("启动失败: 员工不足, requiredSquirrels=" + Mathf.Max(0, plan.requiredSquirrels));
@@ -277,6 +293,28 @@ public class RoomProductionUnit : MonoBehaviour
         SyncPendingMultiplierFromAssignments();
         LogDebug("开始运行: settleIn=" + cycle.ToString("0.0") + "s");
         ChangeState(RoomProductionState.Running);
+    }
+
+    private bool HasRequiredAssignments()
+    {
+        int required = Mathf.Max(0, plan.requiredSquirrels);
+        if (required <= 0)
+        {
+            return true;
+        }
+
+        RoomEmployeeAssignmentManager manager = RoomEmployeeAssignmentManager.Instance;
+        if (manager == null)
+        {
+            manager = FindObjectOfType<RoomEmployeeAssignmentManager>();
+        }
+
+        if (manager == null)
+        {
+            return false;
+        }
+
+        return manager.GetAssignedCount(this) >= required;
     }
 
     // 结算规则：到点时检查资源，足够则扣费并产出；不足则停摆。

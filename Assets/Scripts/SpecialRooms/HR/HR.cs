@@ -19,8 +19,13 @@ public class HR : MonoBehaviour
     public HREmployeeRepository employeeRepository;
     public HRRecruitPanel recruitPanel;
 
+    [SerializeField] private bool hasRecruitedOnce;
+
     private float _nextGenerateAt;
     private bool _canGenerate;
+    private RoomProductionUnit _roomProductionUnit;
+
+    public bool HasRecruitedOnce => hasRecruitedOnce;
 
     void Awake()
     {
@@ -34,7 +39,22 @@ public class HR : MonoBehaviour
 
         if (employeeRepository == null)
         {
-            employeeRepository = FindObjectOfType<HREmployeeRepository>();
+            employeeRepository = HREmployeeRepository.EnsureInstance();
+        }
+
+        if (_roomProductionUnit == null)
+        {
+            _roomProductionUnit = GetComponent<RoomProductionUnit>();
+            if (_roomProductionUnit == null)
+            {
+                _roomProductionUnit = GetComponentInChildren<RoomProductionUnit>(true);
+            }
+        }
+
+        if (_roomProductionUnit != null)
+        {
+            _roomProductionUnit.plan.requiredSquirrels = Mathf.Max(1, _roomProductionUnit.plan.requiredSquirrels);
+            _roomProductionUnit.plan.workType = RoomEmployeeWorkType.HR;
         }
 
         TryAutoBindRecruitPanel();
@@ -146,7 +166,16 @@ public class HR : MonoBehaviour
 
         if (employeeRepository == null)
         {
-            failReason = "未找到 HREmployeeRepository";
+            employeeRepository = HREmployeeRepository.EnsureInstance();
+            if (employeeRepository == null)
+            {
+                failReason = "未找到 HREmployeeRepository";
+                return false;
+            }
+        }
+
+        if (!EnsureRoomReadyForRecruit(out failReason))
+        {
             return false;
         }
 
@@ -165,6 +194,7 @@ public class HR : MonoBehaviour
 
         employee = HRRecruitService.Recruit(hrIntelligence, eliteHrBonus);
         employeeRepository.Add(employee);
+        hasRecruitedOnce = true;
 
         if (syncSquirrelResourceOnRecruit)
         {
@@ -174,17 +204,51 @@ public class HR : MonoBehaviour
         return true;
     }
 
+    private bool EnsureRoomReadyForRecruit(out string reason)
+    {
+        reason = string.Empty;
+
+        if (_roomProductionUnit == null)
+        {
+            _roomProductionUnit = GetComponent<RoomProductionUnit>();
+            if (_roomProductionUnit == null)
+            {
+                _roomProductionUnit = GetComponentInChildren<RoomProductionUnit>(true);
+            }
+        }
+
+        if (_roomProductionUnit == null)
+        {
+            reason = "未找到 HR 房间生产单元";
+            return false;
+        }
+
+        _roomProductionUnit.plan.requiredSquirrels = Mathf.Max(1, _roomProductionUnit.plan.requiredSquirrels);
+
+        if (_roomProductionUnit.State != RoomProductionState.Running)
+        {
+            _roomProductionUnit.ResumeManual();
+        }
+
+        if (_roomProductionUnit.State == RoomProductionState.Running)
+        {
+            return true;
+        }
+
+        RoomEmployeeAssignmentManager manager = RoomEmployeeAssignmentManager.Instance;
+        int assigned = manager != null ? manager.GetAssignedCount(_roomProductionUnit) : 0;
+        int required = Mathf.Max(1, _roomProductionUnit.plan.requiredSquirrels);
+        reason = $"HR房间未启动（已分配 {assigned}/{required}）。请先分配松鼠员工。";
+        return false;
+    }
+
     public bool TryGenerateEmployee(out HREmployeeData employee)
     {
         employee = null;
 
         if (employeeRepository == null)
         {
-            employeeRepository = HREmployeeRepository.Instance;
-            if (employeeRepository == null)
-            {
-                employeeRepository = FindObjectOfType<HREmployeeRepository>();
-            }
+            employeeRepository = HREmployeeRepository.EnsureInstance();
         }
 
         if (employeeRepository == null)
@@ -217,5 +281,19 @@ public class HR : MonoBehaviour
     {
         _canGenerate = true;
         _nextGenerateAt = Time.time + Mathf.Max(1f, generateIntervalSeconds);
+    }
+
+    public RoomProductionUnit GetRoomProductionUnit()
+    {
+        if (_roomProductionUnit == null)
+        {
+            _roomProductionUnit = GetComponent<RoomProductionUnit>();
+            if (_roomProductionUnit == null)
+            {
+                _roomProductionUnit = GetComponentInChildren<RoomProductionUnit>(true);
+            }
+        }
+
+        return _roomProductionUnit;
     }
 }

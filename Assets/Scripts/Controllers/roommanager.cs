@@ -31,9 +31,9 @@ public class RoomDataProfile
 	public List<string> requiredEmployeeIds = new List<string>();
 	public List<RoomEmployeeTraitRule> traitRules = new List<RoomEmployeeTraitRule>();
 
-	[Header("日均产出")]
-	public bool useCustomDailyOutputs = false;
-	public List<ResourceAmount> customDailyOutputs = new List<ResourceAmount>();
+	// [Header("日均产出")]
+	// public bool useCustomDailyOutputs = false;
+	// public List<ResourceAmount> customDailyOutputs = new List<ResourceAmount>();
 
 	public Vector2Int Size => new Vector2Int(Mathf.Max(1, sizeX), Mathf.Max(1, sizeY));
 
@@ -47,17 +47,17 @@ public class RoomDataProfile
 		constructionCosts = NormalizeResourceList(constructionCosts);
 		cycleCosts = NormalizeResourceList(cycleCosts);
 		cycleOutputs = NormalizeResourceList(cycleOutputs);
-		customDailyOutputs = NormalizeResourceList(customDailyOutputs);
+		//customDailyOutputs = NormalizeResourceList(customDailyOutputs);
 		requiredEmployeeIds = NormalizeEmployeeIds(requiredEmployeeIds);
 		traitRules = NormalizeTraitRules(traitRules);
 	}
 
 	public List<ResourceAmount> BuildDailyOutputs(float daySeconds)
 	{
-		if (useCustomDailyOutputs)
-		{
-			return CloneResourceList(customDailyOutputs);
-		}
+		// if (useCustomDailyOutputs)
+		// {
+		// 	return CloneResourceList(customDailyOutputs);
+		// }
 
 		float safeDaySeconds = Mathf.Max(0f, daySeconds);
 		float safeCycleSeconds = Mathf.Max(0.1f, cycleSeconds);

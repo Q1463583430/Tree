@@ -1112,8 +1112,8 @@ public class BluePrint : MonoBehaviour
             return;
         }
 
-        // HR 当前版本走手动招募，避免被房间生产系统卡住或自动产鼠。
-        productionUnit.plan.requiredSquirrels = 0;
+        // HR 当前版本走手动招募：房间放置后需先分配松鼠才能启动。
+        productionUnit.plan.requiredSquirrels = Mathf.Max(0, productionUnit.plan.requiredSquirrels);
         productionUnit.plan.workType = RoomEmployeeWorkType.HR;
 
         if (productionUnit.plan.cycleCosts == null)

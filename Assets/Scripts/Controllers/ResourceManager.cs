@@ -62,9 +62,9 @@ public class ResourceManager : MonoBehaviour
     public List<ResourceState> initialStates = new List<ResourceState>
     {
         new ResourceState { type = ResourceType.Energy, current = 200, min = 0, max = 2000},
-        new ResourceState { type = ResourceType.Root, current = 0, min = 0, max = 2000 },
-        new ResourceState { type = ResourceType.Fruit, current = 0, min = 0, max = 2000 },
-        new ResourceState { type = ResourceType.Squirrel, current = 0, min = 0, max = 2000 },
+        new ResourceState { type = ResourceType.Root, current = 100, min = 0, max = 2000 },
+        new ResourceState { type = ResourceType.Fruit, current = 100, min = 0, max = 2000 },
+        new ResourceState { type = ResourceType.Squirrel, current = 1, min = 0, max = 2000 },
     };
 
     //使用事件来管理资源变化，通过订阅来改变数值

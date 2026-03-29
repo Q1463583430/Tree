@@ -434,7 +434,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f57c9c1f93be7b24699a311c8027ec4c, type: 2}
+  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -519,7 +519,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36343041739bbe64f85a46f8a16f118b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  recruitFruitCost: 0
+  recruitFruitCost: 50
   hrIntelligence: 3
   eliteHrBonus: 0
   syncSquirrelResourceOnRecruit: 1
@@ -530,3 +530,4 @@ MonoBehaviour:
   resourceManager: {fileID: 0}
   employeeRepository: {fileID: 0}
   recruitPanel: {fileID: 0}
+  hasRecruitedOnce: 0
