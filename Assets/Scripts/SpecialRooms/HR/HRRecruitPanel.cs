@@ -128,6 +128,7 @@ public class HRRecruitPanel : MonoBehaviour
 
         RefreshResult(employee);
         RefreshResultImage(employee);
+        NotifyWarehouseUiUpdated();
     }
 
     private void OnRerollClicked()
@@ -154,6 +155,7 @@ public class HRRecruitPanel : MonoBehaviour
 
         RefreshResult(employee);
         RefreshResultImage(employee);
+        NotifyWarehouseUiUpdated();
     }
 
     private void OpenWarehouse()
@@ -399,6 +401,17 @@ public class HRRecruitPanel : MonoBehaviour
         {
             rerollButton.gameObject.SetActive(showReroll);
         }
+    }
+
+    private void NotifyWarehouseUiUpdated()
+    {
+        RoomEmployeeWarehouseUI ui = RoomEmployeeWarehouseUI.Instance;
+        if (ui == null)
+        {
+            return;
+        }
+
+        ui.NotifyWarehouseDataChanged();
     }
 
 }
